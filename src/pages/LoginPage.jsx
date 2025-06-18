@@ -1,6 +1,18 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { dummyUsers, setCurrentUser } from '../data/dummyData';
+import {
+  TextInput, // Input teks Mantine
+  PasswordInput, // Input password Mantine
+  Button, // Tombol Mantine
+  Paper, // Wadah mirip kartu Mantine
+  Title, // Judul Mantine
+  Text, // Teks Mantine
+  Anchor, // Tautan Mantine
+  Stack, // Untuk mengatur elemen secara vertikal
+  Group // Untuk mengatur elemen secara horizontal
+} from '@mantine/core'; // Import komponen Mantine
+import { notifications } from '@mantine/notifications'; // Untuk notifikasi
 
 function LoginPage() {
   const [username, setUsername] = useState('');
@@ -8,123 +20,68 @@ function LoginPage() {
   const navigate = useNavigate();
 
   const handleSubmit = (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  const foundUser = dummyUsers.find(
-    (user) => user.username === username && user.password === password
-  );
+    const foundUser = dummyUsers.find(
+      (user) => user.username === username && user.password === password
+    );
 
-  if (foundUser) {
-    setCurrentUser(foundUser);
-    alert(`Login Berhasil! Selamat datang, ${foundUser.name}.`);
-    navigate('/dashboard');
-  } else {
-    alert('Username atau Password salah!');
-  }
-};
+    if (foundUser) {
+      setCurrentUser(foundUser);
+      // Ganti alert() dengan notifikasi Mantine
+      notifications.show({
+        title: 'Login Berhasil!',
+        message: `Selamat datang, ${foundUser.name}.`,
+        color: 'green',
+      });
+      navigate('/dashboard');
+    } else {
+      // Ganti alert() dengan notifikasi Mantine
+      notifications.show({
+        title: 'Login Gagal',
+        message: 'Username atau Password salah!',
+        color: 'red',
+      });
+    }
+  };
 
   return (
-    <div style={styles.container}>
-      <div style={styles.card}>
-        <h2 style={styles.title}>Login Aplikasi SPP</h2>
-        <form onSubmit={handleSubmit} style={styles.form}>
-          <div style={styles.inputGroup}>
-            <label htmlFor="username" style={styles.label}>NIM / Username</label>
-            <input
-              type="text"
-              id="username"
+    // Paper adalah komponen wadah dengan shadow dan rounded corners
+    <Paper shadow="xl" radius="md" p="xl" style={{ maxWidth: 400, margin: '50px auto', textAlign: 'center' }}>
+      <Stack align="center" spacing="lg"> {/* Stack untuk menyusun elemen secara vertikal */}
+        <Title order={2}>Login Aplikasi SPP</Title> {/* Judul Mantine */}
+        <form onSubmit={handleSubmit} style={{ width: '100%' }}>
+          <Stack spacing="md">
+            <TextInput
+              label="NIM / Username"
+              placeholder="Masukkan NIM atau Username Anda"
               value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              style={styles.input}
+              onChange={(event) => setUsername(event.currentTarget.value)}
               required
+              size="md"
             />
-          </div>
-          <div style={styles.inputGroup}>
-            <label htmlFor="password" style={styles.label}>Password</label>
-            <input
-              type="password"
-              id="password"
+            <PasswordInput
+              label="Password"
+              placeholder="Masukkan Password Anda"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              style={styles.input}
+              onChange={(event) => setPassword(event.currentTarget.value)}
               required
+              size="md"
             />
-          </div>
-          <button type="submit" style={styles.button}>Login</button>
+            <Button type="submit" size="md" fullWidth mt="md"> {/* Tombol Mantine */}
+              Login
+            </Button>
+          </Stack>
         </form>
-        <p style={styles.registerText}>Belum punya akun? <a href="#" style={styles.registerLink}>Daftar di sini</a></p>
-      </div>
-    </div>
+        <Text size="sm">
+          Belum punya akun?{' '}
+          <Anchor component="button" size="sm" onClick={() => console.log('Arahkan ke halaman daftar')}> {/* Tautan Mantine */}
+            Daftar di sini
+          </Anchor>
+        </Text>
+      </Stack>
+    </Paper>
   );
 }
-
-const styles = {
-  container: {
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    minHeight: '100vh',
-    backgroundColor: '#f0f2f5',
-    fontFamily: 'Arial, sans-serif',
-  },
-  card: {
-    backgroundColor: '#ffffff',
-    padding: '40px',
-    borderRadius: '8px',
-    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-    width: '100%',
-    maxWidth: '400px',
-    textAlign: 'center',
-  },
-  title: {
-    marginBottom: '25px',
-    color: '#333',
-  },
-  form: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '20px',
-  },
-  inputGroup: {
-    textAlign: 'left',
-  },
-  label: {
-    display: 'block',
-    marginBottom: '8px',
-    fontWeight: 'bold',
-    color: '#555',
-  },
-  input: {
-    width: 'calc(100% - 20px)',
-    padding: '10px',
-    border: '1px solid #ccc',
-    borderRadius: '5px',
-    fontSize: '16px',
-  },
-  button: {
-    padding: '12px 20px',
-    backgroundColor: '#007bff',
-    color: 'white',
-    border: 'none',
-    borderRadius: '5px',
-    fontSize: '16px',
-    cursor: 'pointer',
-    transition: 'background-color 0.3s ease',
-  },
-  buttonHover: {
-    backgroundColor: '#0056b3',
-  },
-  registerText: {
-    marginTop: '20px',
-    fontSize: '14px',
-    color: '#666',
-  },
-  registerLink: {
-    color: '#007bff',
-    textDecoration: 'none',
-    fontWeight: 'bold',
-  }
-};
-
 
 export default LoginPage;

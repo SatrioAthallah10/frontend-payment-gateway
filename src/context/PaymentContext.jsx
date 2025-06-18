@@ -11,20 +11,16 @@ export const PaymentProvider = ({ children }) => {
     const itemToAdd = dummyPaymentItems.find(item => item.id === itemId);
     if (itemToAdd && !cartItems.some(item => item.id === itemId)) {
       setCartItems((prevItems) => [...prevItems, { ...itemToAdd, quantity: 1 }]);
-      alert(`${itemToAdd.name} ditambahkan ke keranjang.`);
     } else if (itemToAdd && cartItems.some(item => item.id === itemId)) {
-      alert(`${itemToAdd.name} sudah ada di keranjang.`);
     }
   };
 
   const removeFromCart = (itemId) => {
     setCartItems((prevItems) => prevItems.filter(item => item.id !== itemId));
-    alert('Item dihapus dari keranjang.');
   };
 
   const checkout = (userId) => {
     if (cartItems.length === 0) {
-      alert('Keranjang kosong, tidak ada yang bisa dibayar.');
       return false;
     }
 
@@ -47,7 +43,6 @@ export const PaymentProvider = ({ children }) => {
     });
 
     setCartItems([]); 
-    alert('Pembayaran berhasil! Transaksi Anda telah dicatat.');
     return newTransaction;
   };
 
