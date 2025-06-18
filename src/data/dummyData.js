@@ -1,17 +1,15 @@
-// src/data/dummyData.js
-
 export const dummyUsers = [
   {
     id: 'MHS001',
     nim: '2022001',
     username: 'mahasiswa1',
-    password: 'password123', // Hanya untuk simulasi frontend
+    password: 'password123',
     name: 'Budi Santoso',
     role: 'mahasiswa'
   },
   {
     id: 'ADM001',
-    nim: 'ADMIN001', // Contoh NIM untuk admin
+    nim: 'ADMIN001',
     username: 'admin1',
     password: 'adminpassword',
     name: 'Dewi Admin',
@@ -20,14 +18,13 @@ export const dummyUsers = [
 ];
 
 export const dummyPaymentItems = [
-  // SPP Items
   {
     id: 'SPP001',
     name: 'SPP Semester Ganjil 2024/2025',
     amount: 3500000,
     type: 'SPP',
-    status: 'Unpaid', // Status default
-    nim_target: '2022001' // Target mahasiswa
+    status: 'Unpaid',
+    nim_target: '2022001'
   },
   {
     id: 'SPP002',
@@ -37,7 +34,6 @@ export const dummyPaymentItems = [
     status: 'Unpaid',
     nim_target: '2022001'
   },
-  // Non-SPP Items
   {
     id: 'NSPP001',
     name: 'Dana Pengembangan Studi',
@@ -72,7 +68,6 @@ export const dummyPaymentItems = [
   }
 ];
 
-z
 export let currentUser = null;
 
 export const setCurrentUser = (user) => {

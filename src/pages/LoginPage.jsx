@@ -10,7 +10,6 @@ function LoginPage() {
   const handleSubmit = (e) => {
   e.preventDefault();
 
-  z
   const foundUser = dummyUsers.find(
     (user) => user.username === username && user.password === password
   );

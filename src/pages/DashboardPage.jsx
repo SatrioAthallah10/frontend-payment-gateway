@@ -18,7 +18,11 @@ function DashboardPage() {
 
   const handleViewCart = () => {
     navigate('/cart');
-  };z
+  };
+
+  const handleViewReports = () => {
+    navigate('/reports');
+  };
 
   return (
     <div style={styles.container}>
@@ -28,12 +32,20 @@ function DashboardPage() {
         <button style={styles.button} onClick={handleSPPClick}>Pembayaran SPP</button>
         <button style={styles.button} onClick={handleNonSPPClick}>Pembayaran Non-SPP</button>
       </div>
-      <button
-        style={{ ...styles.button, ...styles.viewCartButton }}
-        onClick={handleViewCart}
-      >
-        Lihat Keranjang ({cartItems.length} item)
-      </button>
+      <div style={styles.buttonGroup}> 
+        <button
+          style={{ ...styles.button, ...styles.secondaryButton }}
+          onClick={handleViewCart}
+        >
+          Lihat Keranjang ({cartItems.length} item)
+        </button>
+        <button
+          style={{ ...styles.button, ...styles.secondaryButton }}
+          onClick={handleViewReports}
+        >
+          Lihat Laporan
+        </button>
+      </div>
     </div>
   );
 }
@@ -84,6 +96,12 @@ const styles = {
     marginBottom: '25px',
   },
   viewCartButton: {
+    backgroundColor: '#17a2b8',
+    '&:hover': {
+      backgroundColor: '#138496',
+    },
+  },
+  secondaryButton: {
     backgroundColor: '#17a2b8',
     '&:hover': {
       backgroundColor: '#138496',
