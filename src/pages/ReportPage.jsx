@@ -1,30 +1,46 @@
 // src/pages/ReportPage.jsx
-import React from 'react';
+import React, { useEffect } from 'react'; // Import useEffect
 import { useNavigate } from 'react-router-dom';
 import { usePayment } from '../context/PaymentContext';
-import { currentUser } from '../data/dummyData';
 import {
-  Paper,    // Wadah dengan shadow dan radius
-  Title,    // Judul
-  Text,     // Teks
-  Button,   // Tombol
-  Table,    // Komponen tabel Mantine
-  Group,    // Untuk mengatur elemen horizontal
-  Stack,    // Untuk mengatur elemen vertikal
-  Anchor,   // Tautan Mantine
-  List,     // Komponen daftar Mantine
-  ThemeIcon // Untuk ikon di list
+  Paper,
+  Title,
+  Text,
+  Button,
+  Table,
+  Group,
+  Stack,
+  Anchor,
+  List,
+  ThemeIcon,
+  Loader // Tambahkan Loader
 } from '@mantine/core';
-import { IconCircleCheck, IconCircleX } from '@tabler/icons-react'; // Ikon untuk status
+import { IconCircleCheck, IconCircleX } from '@tabler/icons-react';
 
 function ReportPage() {
-  const { transactions } = usePayment();
+  const { transactions, currentUser } = usePayment(); // Dapatkan currentUser dari context
   const navigate = useNavigate();
+
+  // Arahkan ke login jika tidak ada user yang login
+  useEffect(() => {
+    if (!currentUser) {
+      navigate('/');
+    }
+  }, [currentUser, navigate]);
 
   // Filter transaksi hanya untuk user yang sedang login
   const userTransactions = transactions.filter(
     (transaction) => transaction.userId === currentUser?.id
   );
+
+  if (!currentUser) {
+    return (
+      <Group position="center" style={{ minHeight: '100vh' }}>
+        <Loader size="lg" />
+        <Text>Memuat sesi...</Text>
+      </Group>
+    );
+  }
 
   return (
     <Paper shadow="xl" radius="md" p="xl" style={{ maxWidth: 1000, margin: '50px auto' }}>
@@ -32,17 +48,10 @@ function ReportPage() {
         <Group position="apart">
           <Button variant="outline" onClick={() => navigate('/dashboard')}>&larr; Kembali ke Dashboard</Button>
           <Title order={2}>Laporan Riwayat Pembayaran</Title>
-          <div></div> {/* Placeholder untuk menjaga layout apart */}
+          <div></div>
         </Group>
 
-        {!currentUser ? (
-          <Text align="center" size="lg" color="dimmed" mt="md">
-            Anda harus login untuk melihat laporan ini.{' '}
-            <Anchor component="button" onClick={() => navigate('/')}>
-              Login sekarang
-            </Anchor>
-          </Text>
-        ) : userTransactions.length === 0 ? (
+        {userTransactions.length === 0 ? (
           <Text align="center" size="lg" color="dimmed" mt="md">
             Belum ada transaksi pembayaran yang tercatat untuk Anda.
           </Text>

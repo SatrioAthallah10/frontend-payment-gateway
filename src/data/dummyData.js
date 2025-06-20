@@ -67,9 +67,3 @@ export const dummyPaymentItems = [
     nim_target: '2022001'
   }
 ];
-
-export let currentUser = null;
-
-export const setCurrentUser = (user) => {
-  currentUser = user;
-};

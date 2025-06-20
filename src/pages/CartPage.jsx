@@ -1,23 +1,30 @@
 // src/pages/CartPage.jsx
-import React from 'react';
+import React, { useEffect } from 'react'; // Import useEffect
 import { useNavigate } from 'react-router-dom';
 import { usePayment } from '../context/PaymentContext';
-import { currentUser } from '../data/dummyData'; // Untuk user ID saat checkout
 import {
-  Paper,        // Wadah dengan shadow dan radius
-  Title,        // Judul
-  Text,         // Teks
-  Button,       // Tombol
-  Table,        // Komponen tabel Mantine
-  Group,        // Untuk mengatur elemen horizontal
-  Stack,        // Untuk mengatur elemen vertikal
-  Divider,      // Garis pemisah
+  Paper,
+  Title,
+  Text,
+  Button,
+  Table,
+  Group,
+  Stack,
+  Divider,
+  Loader // Tambahkan Loader
 } from '@mantine/core';
-import { notifications } from '@mantine/notifications'; // Untuk notifikasi
+import { notifications } from '@mantine/notifications';
 
 function CartPage() {
-  const { cartItems, removeFromCart, checkout } = usePayment();
+  const { cartItems, removeFromCart, checkout, currentUser } = usePayment(); // Dapatkan currentUser dari context
   const navigate = useNavigate();
+
+  // Arahkan ke login jika tidak ada user yang login
+  useEffect(() => {
+    if (!currentUser) {
+      navigate('/');
+    }
+  }, [currentUser, navigate]);
 
   // Hitung total pembayaran
   const totalAmount = cartItems.reduce((sum, item) => sum + item.amount, 0);
@@ -42,17 +49,15 @@ function CartPage() {
       return;
     }
 
-    const transaction = checkout(currentUser.id); // Lakukan simulasi checkout
+    const transaction = checkout(currentUser.id); // Kirim currentUser.id ke checkout
     if (transaction) {
       notifications.show({
         title: 'Pembayaran Berhasil!',
         message: `Transaksi Rp ${transaction.totalAmount.toLocaleString('id-ID')} berhasil dicatat.`,
         color: 'green',
       });
-      navigate('/reports'); // Arahkan ke halaman laporan
+      navigate('/reports');
     } else {
-      // Ini akan dieksekusi jika cartItems kosong sebelum checkout dipanggil
-      // Walaupun sudah ada guard di atas, ini sebagai fallback
       notifications.show({
         title: 'Checkout Gagal',
         message: 'Terjadi masalah saat proses checkout. Coba lagi.',
@@ -61,13 +66,22 @@ function CartPage() {
     }
   };
 
+  if (!currentUser) {
+    return (
+      <Group position="center" style={{ minHeight: '100vh' }}>
+        <Loader size="lg" />
+        <Text>Memuat sesi...</Text>
+      </Group>
+    );
+  }
+
   return (
     <Paper shadow="xl" radius="md" p="xl" style={{ maxWidth: 900, margin: '50px auto' }}>
       <Stack spacing="xl">
         <Group position="apart">
           <Button variant="outline" onClick={() => navigate('/dashboard')}>&larr; Kembali ke Dashboard</Button>
           <Title order={2}>Keranjang Pembayaran Anda</Title>
-          <div></div> {/* Placeholder untuk menjaga layout apart */}
+          <div></div>
         </Group>
 
         {cartItems.length === 0 ? (
@@ -104,7 +118,7 @@ function CartPage() {
               </tbody>
             </Table>
 
-            <Divider my="sm" /> {/* Garis pemisah Mantine */}
+            <Divider my="sm" />
 
             <Group position="right" align="center" mt="md" spacing="lg">
               <Title order={3}>Total Pembayaran:</Title>

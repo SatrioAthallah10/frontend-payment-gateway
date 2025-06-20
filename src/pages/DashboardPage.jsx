@@ -1,26 +1,27 @@
-import React from 'react';
+// src/pages/DashboardPage.jsx
+import React, { useEffect } from 'react'; // Import useEffect
 import { useNavigate } from 'react-router-dom';
-import { currentUser } from '../data/dummyData';
-import { usePayment } from '../context/PaymentContext';
+import { usePayment } from '../context/PaymentContext'; // Import usePayment
 import {
-  Paper,    // Wadah dengan shadow dan radius
-  Title,    // Judul
-  Text,     // Teks
-  Button,   // Tombol
-  Group,    // Untuk mengatur elemen secara horizontal
-  Stack     // Untuk mengatur elemen secara vertikal
-} from '@mantine/core'; // Import komponen Mantine
+  Paper,
+  Title,
+  Text,
+  Button,
+  Group,
+  Stack,
+  Loader // Tambahkan Loader
+} from '@mantine/core';
 
 function DashboardPage() {
   const navigate = useNavigate();
-  const { cartItems } = usePayment();
-  const loggedInUser = currentUser;
+  const { cartItems, currentUser, logout } = usePayment(); // Dapatkan currentUser dan logout dari context
 
-  React.useEffect(() => {
-    if (!loggedInUser) {
+  // Arahkan ke login jika tidak ada user yang login
+  useEffect(() => {
+    if (!currentUser) {
       navigate('/');
     }
-  }, [loggedInUser, navigate]);
+  }, [currentUser, navigate]);
 
   const handleSPPClick = () => {
     navigate('/payments/spp');
@@ -38,21 +39,30 @@ function DashboardPage() {
     navigate('/reports');
   };
 
-  if (!loggedInUser) {
-    return <Text align="center" mt="xl">Memuat...</Text>;
+  const handleLogout = () => { // Fungsi baru untuk logout
+    logout(); // Panggil fungsi logout dari context
+    navigate('/'); // Arahkan ke halaman login setelah logout
+  };
+
+  // Tampilkan loader jika currentUser masih null dan belum diarahkan
+  if (!currentUser) {
+    return (
+      <Group position="center" style={{ minHeight: '100vh' }}>
+        <Loader size="lg" />
+        <Text>Memuat sesi...</Text>
+      </Group>
+    );
   }
 
   return (
-    // Paper adalah kontainer utama yang memberikan styling seperti kartu
     <Paper shadow="xl" radius="md" p="xl" style={{ maxWidth: 800, margin: '50px auto', textAlign: 'center' }}>
-      <Stack align="center" spacing="xl"> {/* Stack untuk vertikal alignment */}
-        <Title order={1}>Selamat Datang, {loggedInUser.name}!</Title> {/* Title Mantine */}
+      <Stack align="center" spacing="xl">
+        <Title order={1}>Selamat Datang, {currentUser.name || currentUser.email}!</Title> {/* Gunakan currentUser dari context */}
         <Text size="lg" color="dimmed">
           Ini adalah Dashboard Anda. Silakan pilih opsi pembayaran di bawah.
         </Text>
 
-        {/* Grup tombol untuk pembayaran SPP/Non-SPP */}
-        <Group spacing="md" position="center" mt="lg"> {/* Group untuk horizontal alignment */}
+        <Group spacing="md" position="center" mt="lg">
           <Button size="lg" onClick={handleSPPClick}>
             Pembayaran SPP
           </Button>
@@ -61,7 +71,6 @@ function DashboardPage() {
           </Button>
         </Group>
 
-        {/* Grup tombol untuk keranjang dan laporan */}
         <Group spacing="md" position="center" mt="md">
           <Button variant="outline" size="md" onClick={handleViewCart}>
             Lihat Keranjang ({cartItems.length} item)
@@ -70,8 +79,10 @@ function DashboardPage() {
             Lihat Laporan
           </Button>
         </Group>
-        
-        {/* Nanti kita bisa tambahkan lebih banyak konten, seperti informasi tagihan mendesak, dll. */}
+
+        <Button variant="light" color="red" size="md" mt="xl" onClick={handleLogout}> {/* Tombol logout baru */}
+          Logout
+        </Button>
       </Stack>
     </Paper>
   );
