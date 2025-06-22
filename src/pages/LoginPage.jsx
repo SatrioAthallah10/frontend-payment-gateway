@@ -1,4 +1,3 @@
-// src/pages/LoginPage.jsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -44,20 +43,31 @@ function LoginPage() {
       const data = await response.json();
 
       if (response.ok) {
-        const user = data.data.user; // Pastikan path ke objek user benar, sesuai screenshot Postman: data.data.user
-        const apiToken = data.data.token; // Pastikan path ke token benar: data.data.token
+        const user = data.data?.user;
+        const apiToken = data.data?.token || data.data?.user?.token;
 
-        console.log("LOGIN SUCCESS! Received user object:", user); // DEBUGGING: LOG OBJEK USER
-        console.log("LOGIN SUCCESS! Received API Token:", apiToken); // DEBUGGING: LOG TOKEN
+        console.log("LOGIN SUCCESS! Received raw data object:", data);
+        console.log("LOGIN SUCCESS! Received user object:", user);
+        console.log("LOGIN SUCCESS! Received API Token:", apiToken);
 
-        login(user, apiToken);
+        if (user && apiToken) { 
+          login(user, apiToken);
 
-        notifications.show({
-          title: 'Login Berhasil!',
-          message: `Selamat datang, ${user?.name || email}.`,
-          color: 'green',
-        });
-        navigate('/dashboard');
+          notifications.show({
+            title: 'Login Berhasil!',
+            message: `Selamat datang, ${user.name || user.email}.`,
+            color: 'green',
+          });
+          navigate('/dashboard');
+        } else {
+          notifications.show({
+            title: 'Login Gagal: Data Tidak Lengkap',
+            message: 'Respons dari server tidak menyediakan data user atau token yang lengkap.',
+            color: 'red',
+          });
+          console.error('Login Error: Missing user or token in response', data);
+        }
+
       } else {
         notifications.show({
           title: 'Login Gagal',

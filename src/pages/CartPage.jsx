@@ -1,9 +1,8 @@
 // src/pages/CartPage.jsx
-import React, { useEffect } from 'react'; // Import useEffect
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePayment } from '../context/PaymentContext';
 import {
-  Paper,
   Title,
   Text,
   Button,
@@ -11,25 +10,24 @@ import {
   Group,
   Stack,
   Divider,
-  Loader // Tambahkan Loader
+  Loader
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 
 function CartPage() {
-  const { cartItems, removeFromCart, checkout, currentUser } = usePayment(); // Dapatkan currentUser dari context
+  const { cartItems, removeFromCart, checkout, currentUser, isAuthLoading } = usePayment();
   const navigate = useNavigate();
 
-  // Arahkan ke login jika tidak ada user yang login
   useEffect(() => {
-    if (!currentUser) {
+    if (!isAuthLoading && !currentUser) {
       navigate('/');
     }
-  }, [currentUser, navigate]);
+  }, [currentUser, navigate, isAuthLoading]);
 
   // Hitung total pembayaran
-  const totalAmount = cartItems.reduce((sum, item) => sum + item.amount, 0);
+  const totalAmount = cartItems.reduce((sum, item) => sum + (item.amount || 0), 0);
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
     if (cartItems.length === 0) {
       notifications.show({
         title: 'Keranjang Kosong',
@@ -49,24 +47,26 @@ function CartPage() {
       return;
     }
 
-    const transaction = checkout(currentUser.id); // Kirim currentUser.id ke checkout
-    if (transaction) {
-      notifications.show({
-        title: 'Pembayaran Berhasil!',
-        message: `Transaksi Rp ${transaction.totalAmount.toLocaleString('id-ID')} berhasil dicatat.`,
-        color: 'green',
-      });
-      navigate('/reports');
+    // Panggil fungsi checkout dari context yang sekarang sudah terintegrasi Midtrans
+    // Kirimkan array cartItems sebagai parameter kedua
+    const checkoutSuccess = await checkout(currentUser.id, cartItems); 
+    
+    // Redirect setelah user kembali dari Midtrans, status akan diupdate via check-status
+    if (checkoutSuccess) {
+      // Kita tidak redirect langsung ke /reports lagi, karena window.location.href sudah mengarahkan ke Midtrans
+      // Namun, jika ada kasus redirect gagal, kita bisa ke dashboard
+      // notifications.show({
+      //   title: 'Pembayaran Diinisiasi',
+      //   message: 'Silakan selesaikan pembayaran di Midtrans.',
+      //   color: 'blue',
+      // });
+      // navigate('/dashboard'); // Atau ke halaman lain yang sesuai
     } else {
-      notifications.show({
-        title: 'Checkout Gagal',
-        message: 'Terjadi masalah saat proses checkout. Coba lagi.',
-        color: 'red',
-      });
+        console.log("Checkout process did not fully succeed, staying on cart page.");
     }
   };
 
-  if (!currentUser) {
+  if (isAuthLoading || !currentUser) {
     return (
       <Group position="center" style={{ minHeight: '100vh' }}>
         <Loader size="lg" />
@@ -76,7 +76,7 @@ function CartPage() {
   }
 
   return (
-    <Paper shadow="xl" radius="md" p="xl" style={{ maxWidth: 900, margin: '50px auto' }}>
+    <div style={{ maxWidth: 900, margin: '0 auto', padding: '20px' }}>
       <Stack spacing="xl">
         <Group position="apart">
           <Button variant="outline" onClick={() => navigate('/dashboard')}>&larr; Kembali ke Dashboard</Button>
@@ -101,8 +101,8 @@ function CartPage() {
               <tbody>
                 {cartItems.map((item) => (
                   <tr key={item.id}>
-                    <td>{item.name}</td>
-                    <td>Rp {item.amount.toLocaleString('id-ID')}</td>
+                    <td>{item.description}</td>
+                    <td>Rp {(item.amount || 0).toLocaleString('id-ID')}</td> 
                     <td>
                       <Button
                         size="sm"
@@ -126,14 +126,14 @@ function CartPage() {
             </Group>
 
             <Group position="right" mt="xl">
-              <Button size="lg" onClick={handleCheckout}>
+              <Button size="lg" onClick={handleCheckout} loading={isAuthLoading}>
                 Bayar Sekarang
               </Button>
             </Group>
           </>
         )}
       </Stack>
-    </Paper>
+    </div>
   );
 }
 

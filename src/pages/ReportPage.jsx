@@ -1,5 +1,4 @@
-// src/pages/ReportPage.jsx
-import React, { useEffect } from 'react'; // Import useEffect
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePayment } from '../context/PaymentContext';
 import {
@@ -13,34 +12,96 @@ import {
   Anchor,
   List,
   ThemeIcon,
-  Loader // Tambahkan Loader
+  Loader 
 } from '@mantine/core';
 import { IconCircleCheck, IconCircleX } from '@tabler/icons-react';
+import { notifications } from '@mantine/notifications';
+import { API_BASE_URL } from '../config/api';
 
 function ReportPage() {
-  const { transactions, currentUser } = usePayment(); // Dapatkan currentUser dari context
+  const { transactions, currentUser, apiToken, isAuthLoading } = usePayment(); 
   const navigate = useNavigate();
+  const [paidBillings, setPaidBillings] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Arahkan ke login jika tidak ada user yang login
   useEffect(() => {
-    if (!currentUser) {
+    if (!isAuthLoading && (!currentUser || !apiToken)) {
+      notifications.show({
+        title: 'Sesi Habis',
+        message: 'Anda harus login untuk melihat laporan ini.',
+        color: 'red',
+      });
       navigate('/');
     }
-  }, [currentUser, navigate]);
+  }, [currentUser, navigate, apiToken, isAuthLoading]);
 
-  // Filter transaksi hanya untuk user yang sedang login
-  const userTransactions = transactions.filter(
-    (transaction) => transaction.userId === currentUser?.id
-  );
+  const fetchPaidBillings = async () => {
+    setLoading(true);
+    if (!apiToken) {
+      setLoading(false);
+      return;
+    }
+    try {
+      const response = await fetch(`${API_BASE_URL}/v1/user/billings`, { 
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${apiToken}`
+        },
+      });
 
-  if (!currentUser) {
+      const data = await response.json();
+      console.log("Fetch Billings for Report Page Response:", data); 
+
+      if (response.ok) {
+        const paidItems = Array.isArray(data.data) 
+                          ? data.data.filter(item => item.status === 'paid') 
+                          : [];
+        setPaidBillings(paidItems);
+        notifications.show({
+            title: 'Laporan Dimuat',
+            message: 'Riwayat pembayaran berhasil diambil.',
+            color: 'green',
+            autoClose: 2000
+        });
+      } else {
+        notifications.show({
+          title: 'Gagal Memuat Laporan',
+          message: data.message || 'Terjadi kesalahan saat mengambil laporan.',
+          color: 'red',
+        });
+        console.error('Fetch Report Billings Error:', data);
+        setPaidBillings([]);
+      }
+    } catch (error) {
+      notifications.show({
+        title: 'Error Koneksi',
+        message: 'Tidak dapat terhubung ke server untuk mengambil laporan.',
+        color: 'red',
+      });
+      console.error('Network Error during fetch report billings:', error);
+      setPaidBillings([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!isAuthLoading && currentUser && apiToken) { 
+      fetchPaidBillings();
+    }
+  }, [apiToken, currentUser, isAuthLoading]); 
+
+  if (isAuthLoading || !currentUser || loading) { 
     return (
       <Group position="center" style={{ minHeight: '100vh' }}>
         <Loader size="lg" />
-        <Text>Memuat sesi...</Text>
+        <Text>Memuat laporan...</Text>
       </Group>
     );
   }
+
+  const userTransactionsToDisplay = paidBillings;
 
   return (
     <Paper shadow="xl" radius="md" p="xl" style={{ maxWidth: 1000, margin: '50px auto' }}>
@@ -51,7 +112,7 @@ function ReportPage() {
           <div></div>
         </Group>
 
-        {userTransactions.length === 0 ? (
+        {userTransactionsToDisplay.length === 0 ? (
           <Text align="center" size="lg" color="dimmed" mt="md">
             Belum ada transaksi pembayaran yang tercatat untuk Anda.
           </Text>
@@ -59,39 +120,28 @@ function ReportPage() {
           <Table striped highlightOnHover withTableBorder withColumnBorders>
             <thead>
               <tr>
-                <th>ID Transaksi</th>
-                <th>Tanggal</th>
+                <th>ID</th>
                 <th>Deskripsi Pembayaran</th>
-                <th>Total</th>
+                <th>Jumlah</th>
+                <th>Bulan/Tahun</th> 
                 <th>Status</th>
               </tr>
             </thead>
             <tbody>
-              {userTransactions.map((trx) => (
+              {userTransactionsToDisplay.map((trx) => (
                 <tr key={trx.id}>
-                  <td>{trx.id}</td>
-                  <td>{new Date(trx.date).toLocaleDateString('id-ID', {
-                    year: 'numeric', month: 'long', day: 'numeric',
-                    hour: '2-digit', minute: '2-digit'
-                  })}</td>
+                  <td>{trx.id.substring(0, 8)}...</td>
                   <td>
-                    <List spacing="xs" size="sm" center>
-                      {trx.items.map((item, index) => (
-                        <List.Item key={index}>
-                          <Text>{item.name} (Rp {item.amount.toLocaleString('id-ID')})</Text>
-                        </List.Item>
-                      ))}
-                    </List>
+                    <Text>{trx.description}</Text> 
                   </td>
-                  <td>
-                    <Text weight={500}>Rp {trx.totalAmount.toLocaleString('id-ID')}</Text>
-                  </td>
+                  <td>Rp {trx.amount.toLocaleString('id-ID')}</td> 
+                  <td>{trx.month}/{trx.year}</td> 
                   <td>
                     <Group spacing="xs" noWrap>
-                      <ThemeIcon size="sm" radius="xl" color={trx.status === 'Paid' ? 'teal' : 'red'}>
-                        {trx.status === 'Paid' ? <IconCircleCheck size={16} /> : <IconCircleX size={16} />}
+                      <ThemeIcon size="sm" radius="xl" color={trx.status === 'paid' ? 'teal' : 'red'}>
+                        {trx.status === 'paid' ? <IconCircleCheck size={16} /> : <IconCircleX size={16} />}
                       </ThemeIcon>
-                      <Text color={trx.status === 'Paid' ? 'teal' : 'red'} weight={500}>
+                      <Text color={trx.status === 'paid' ? 'teal' : 'red'} weight={500}>
                         {trx.status}
                       </Text>
                     </Group>

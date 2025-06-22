@@ -1,23 +1,103 @@
 // src/routes/Routes.jsx
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import { AppShell, Loader, Group, Text, Stack } from '@mantine/core';
+import Navbar from '../components/Navbar';
+import { usePayment } from '../context/PaymentContext';
+import { notifications } from '@mantine/notifications'; // Import notifications
+
 import LoginPage from '../pages/LoginPage';
 import DashboardPage from '../pages/DashboardPage';
 import PaymentListPage from '../pages/PaymentListPage';
 import CartPage from '../pages/CartPage';
 import ReportPage from '../pages/ReportPage';
-import RegisterPage from '../pages/RegisterPage'; // Import RegisterPage
+import RegisterPage from '../pages/RegisterPage';
+import DebtManagementPage from '../pages/DebtManagementPage';
+import BillingManagementPage from '../pages/BillingManagementPage';
+import UserManagementPage from '../pages/UserManagementPage';
 
 function AppRoutes() {
+  const { currentUser, isAuthLoading, checkPaymentStatus, transactions } = usePayment();
+
+  const AuthenticatedLayout = ({ children }) => {
+    const navigate = useNavigate();
+    const location = useLocation();
+
+    // Logic untuk menangani callback dari Midtrans
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const transactionStatus = params.get('transaction_status');
+        const orderIdFromUrl = params.get('order_id'); // Ganti nama agar tidak ambigu
+        const grossAmount = params.get('gross_amount');
+
+        // Hapus query params dari URL agar tidak diproses lagi saat refresh
+        if (location.search.includes('transaction_status') || location.search.includes('order_id')) {
+          navigate(location.pathname, { replace: true });
+        }
+
+        // Panggil checkPaymentStatus hanya jika ada orderIdFromUrl dan transactionStatus
+        if (orderIdFromUrl && transactionStatus) {
+            console.log(`Midtrans Callback: Status=${transactionStatus}, Order ID=${orderIdFromUrl}`);
+
+            // Panggil checkPaymentStatus dengan Order ID yang valid
+            // checkPaymentStatus() sendiri yang akan menampilkan notifikasi.
+            checkPaymentStatus(orderIdFromUrl); // Panggil checkPaymentStatus dengan Order ID
+
+            // Setelah memproses callback, arahkan ke halaman laporan.
+            // Ini akan memastikan user melihat laporan setelah pembayaran.
+            navigate('/reports');
+
+        }
+    }, [location.search, navigate, checkPaymentStatus]); // Hapus transactions dari dependency jika tidak digunakan langsung di sini
+
+
+    React.useEffect(() => {
+      if (!isAuthLoading && !currentUser) {
+        navigate('/');
+      }
+    }, [isAuthLoading, currentUser, navigate]);
+
+    if (isAuthLoading) {
+      return (
+        <Group position="center" style={{ minHeight: '100vh', width: '100%', backgroundColor: '#f0f2f5' }}>
+          <Stack align="center">
+            <Loader size="xl" />
+            <Text size="lg" color="dimmed">Memuat sesi...</Text>
+          </Stack>
+        </Group>
+      );
+    }
+
+    if (!currentUser) {
+      return null;
+    }
+
+    return (
+      <AppShell
+        header={{ height: 60 }}
+        padding="md"
+      >
+        <Navbar />
+        <AppShell.Main>
+          {children}
+        </AppShell.Main>
+      </AppShell>
+    );
+  };
+
   return (
     <Router>
       <Routes>
         <Route path="/" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} /> {/* Rute untuk halaman registrasi */}
-        <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/payments/:type" element={<PaymentListPage />} />
-        <Route path="/cart" element={<CartPage />} />
-        <Route path="/reports" element={<ReportPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+
+        <Route path="/dashboard" element={<AuthenticatedLayout><DashboardPage /></AuthenticatedLayout>} />
+        <Route path="/payments/:type" element={<AuthenticatedLayout><PaymentListPage /></AuthenticatedLayout>} />
+        <Route path="/cart" element={<AuthenticatedLayout><CartPage /></AuthenticatedLayout>} />
+        <Route path="/reports" element={<AuthenticatedLayout><ReportPage /></AuthenticatedLayout>} />
+        <Route path="/admin/debts" element={<AuthenticatedLayout><DebtManagementPage /></AuthenticatedLayout>} />
+        <Route path="/admin/billings" element={<AuthenticatedLayout><BillingManagementPage /></AuthenticatedLayout>} />
+        <Route path="/admin/users" element={<AuthenticatedLayout><UserManagementPage /></AuthenticatedLayout>} />
       </Routes>
     </Router>
   );

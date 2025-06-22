@@ -1,28 +1,29 @@
 // src/pages/DashboardPage.jsx
-import React, { useEffect } from 'react'; // Import useEffect
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { usePayment } from '../context/PaymentContext'; // Import usePayment
+import { usePayment } from '../context/PaymentContext';
 import {
-  Paper,
+  // Paper, // Pastikan ini dihapus
   Title,
   Text,
   Button,
   Group,
   Stack,
-  Loader // Tambahkan Loader
+  Loader,
+  Divider
 } from '@mantine/core';
 
 function DashboardPage() {
   const navigate = useNavigate();
-  const { cartItems, currentUser, logout } = usePayment(); // Dapatkan currentUser dan logout dari context
+  const { cartItems, currentUser, logout, isAuthLoading } = usePayment();
 
-  // Arahkan ke login jika tidak ada user yang login
   useEffect(() => {
-    if (!currentUser) {
+    if (!isAuthLoading && !currentUser) {
       navigate('/');
     }
-  }, [currentUser, navigate]);
+  }, [currentUser, navigate, isAuthLoading]);
 
+  // Pastikan semua handle functions didefinisikan di sini
   const handleSPPClick = () => {
     navigate('/payments/spp');
   };
@@ -39,13 +40,24 @@ function DashboardPage() {
     navigate('/reports');
   };
 
-  const handleLogout = () => { // Fungsi baru untuk logout
-    logout(); // Panggil fungsi logout dari context
-    navigate('/'); // Arahkan ke halaman login setelah logout
+  const handleManageDebts = () => {
+    navigate('/admin/debts');
   };
 
-  // Tampilkan loader jika currentUser masih null dan belum diarahkan
-  if (!currentUser) {
+  const handleManageBillings = () => {
+    navigate('/admin/billings');
+  };
+
+  const handleManageUsers = () => {
+    navigate('/admin/users');
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
+
+  if (isAuthLoading || !currentUser) {
     return (
       <Group position="center" style={{ minHeight: '100vh' }}>
         <Loader size="lg" />
@@ -54,12 +66,15 @@ function DashboardPage() {
     );
   }
 
+  const isAdmin = currentUser.role === 'superadmin';
+
   return (
-    <Paper shadow="xl" radius="md" p="xl" style={{ maxWidth: 800, margin: '50px auto', textAlign: 'center' }}>
+    // Pastikan ada div wrapper dengan styling untuk layout
+    <div style={{ maxWidth: 800, margin: '0 auto', textAlign: 'center', padding: '20px' }}>
       <Stack align="center" spacing="xl">
-        <Title order={1}>Selamat Datang, {currentUser.name || currentUser.email}!</Title> {/* Gunakan currentUser dari context */}
+        <Title order={1}>Selamat Datang, {currentUser.name || currentUser.email}!</Title>
         <Text size="lg" color="dimmed">
-          Ini adalah Dashboard Anda. Silakan pilih opsi pembayaran di bawah.
+          Ini adalah Dashboard Anda. Silakan pilih opsi pembayaran atau manajemen di bawah.
         </Text>
 
         <Group spacing="md" position="center" mt="lg">
@@ -80,11 +95,28 @@ function DashboardPage() {
           </Button>
         </Group>
 
-        <Button variant="light" color="red" size="md" mt="xl" onClick={handleLogout}> {/* Tombol logout baru */}
+        {isAdmin && (
+          <>
+            <Divider my="md" size="md" style={{ width: '100%' }} label="Panel Admin" labelPosition="center" />
+            <Group spacing="md" position="center">
+              <Button variant="filled" color="grape" size="md" onClick={handleManageDebts}>
+                Kelola Kategori Pembayaran
+              </Button>
+              <Button variant="filled" color="grape" size="md" onClick={handleManageBillings}>
+                Kelola Semua Tagihan
+              </Button>
+              <Button variant="filled" color="grape" size="md" onClick={handleManageUsers}>
+                Kelola Pengguna
+              </Button>
+            </Group>
+          </>
+        )}
+
+        <Button variant="light" color="red" size="md" mt="xl" onClick={handleLogout}>
           Logout
         </Button>
       </Stack>
-    </Paper>
+    </div>
   );
 }
 

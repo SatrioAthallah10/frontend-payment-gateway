@@ -1,7 +1,7 @@
 // src/pages/PaymentListPage.jsx
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { usePayment } from '../context/PaymentContext'; // Import usePayment
+import { usePayment } from '../context/PaymentContext';
 import {
   Paper,
   Title,
@@ -10,54 +10,62 @@ import {
   Table,
   Group,
   Stack,
-  Loader
+  Loader,
+  TextInput, // Untuk input pencarian
+  Select     // Untuk filter dropdown
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { API_BASE_URL } from '../config/api'; // Import API_BASE_URL
+import { API_BASE_URL } from '../config/api';
+import { IconSearch } from '@tabler/icons-react'; // Import icon search
 
 function PaymentListPage() {
-  const { type } = useParams(); // Ambil parameter 'type' dari URL (spp atau non-spp)
+  const { type } = useParams();
   const navigate = useNavigate();
-  const { addToCart, currentUser, apiToken } = usePayment(); // Dapatkan addToCart, currentUser, dan apiToken dari context
-  const [filteredPayments, setFilteredPayments] = useState([]);
+  const { addToCart, currentUser, apiToken, isAuthLoading } = usePayment();
+  const [allBillings, setAllBillings] = useState([]); // Menyimpan semua data billing dari backend
+  const [filteredPayments, setFilteredPayments] = useState([]); // Data yang ditampilkan setelah filter
   const [pageTitle, setPageTitle] = useState('');
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchBillings = async () => {
-      setLoading(true); // Mulai loading
+  // State untuk pencarian dan filter
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState('all'); // 'all', 'paid', 'unpaid'
 
-      if (!currentUser || !apiToken) {
-        notifications.show({
-          title: 'Sesi Habis',
-          message: 'Anda harus login untuk mengakses halaman ini.',
-          color: 'red',
-        });
-        navigate('/');
+  useEffect(() => {
+    if (isAuthLoading) {
+        setLoading(true);
         return;
-      }
+    }
+
+    if (!currentUser || currentUser.role !== 'user' || !apiToken) {
+        notifications.show({
+            title: 'Akses Ditolak',
+            message: 'Halaman ini hanya untuk pengguna mahasiswa.',
+            color: 'red',
+        });
+        setLoading(false);
+        navigate('/dashboard');
+        return;
+    }
+
+    const fetchBillings = async () => {
+      setLoading(true);
 
       try {
-        const response = await fetch(`${API_BASE_URL}/v1/user/billings`, { // Panggil endpoint billing
+        const response = await fetch(`${API_BASE_URL}/v1/user/billings`, {
           method: 'GET',
           headers: {
             'Accept': 'application/json',
-            'Authorization': `Bearer ${apiToken}` // Kirim Bearer Token
+            'Authorization': `Bearer ${apiToken}`
           },
         });
 
         const data = await response.json();
+        console.log("Fetch Billings Response (PaymentListPage):", data);
 
         if (response.ok) {
-          // Asumsi backend mengembalikan array of billing objects di data.data
-          // Filter data dari backend berdasarkan type (SPP/Non-SPP)
-          // Asumsi item dari backend memiliki property 'type' seperti dummy data kita,
-          // atau kita perlu mapping jika nama propertynya berbeda (misal 'jenis_tagihan')
-          const paymentType = type.toLowerCase(); // Convert ke lowercase untuk perbandingan
-          const itemsFromBackend = data.data.filter(
-            (item) => item.description.toLowerCase().includes(paymentType) // Filter berdasarkan deskripsi, atau tambahkan 'type' di backend
-          );
-          setFilteredPayments(itemsFromBackend);
+          const fetchedBillings = Array.isArray(data.data) ? data.data : [];
+          setAllBillings(fetchedBillings); // Simpan semua data yang diambil
           setPageTitle(type.toUpperCase() === 'SPP' ? 'Daftar Tagihan SPP' : 'Daftar Tagihan Non-SPP');
         } else {
           notifications.show({
@@ -66,7 +74,7 @@ function PaymentListPage() {
             color: 'red',
           });
           console.error('Fetch Billings Error:', data);
-          setFilteredPayments([]); // Kosongkan daftar jika gagal
+          setAllBillings([]);
         }
       } catch (error) {
         notifications.show({
@@ -75,44 +83,54 @@ function PaymentListPage() {
           color: 'red',
         });
         console.error('Network Error during fetch billings:', error);
-        setFilteredPayments([]);
+        setAllBillings([]);
       } finally {
-        setLoading(false); // Selesai loading
+        setLoading(false);
       }
     };
 
     fetchBillings();
-  }, [type, navigate, currentUser, apiToken]); // Tambahkan apiToken sebagai dependency
+  }, [type, navigate, currentUser, apiToken, isAuthLoading]);
+
+  // useEffect untuk menerapkan pencarian dan filter setiap kali allBillings, searchTerm, atau filterStatus berubah
+  useEffect(() => {
+    let currentFiltered = allBillings;
+
+    // Filter berdasarkan search term
+    if (searchTerm) {
+      currentFiltered = currentFiltered.filter(item =>
+        item.description.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Filter berdasarkan status
+    if (filterStatus !== 'all') {
+      currentFiltered = currentFiltered.filter(item => item.status === filterStatus);
+    }
+
+    setFilteredPayments(currentFiltered);
+  }, [allBillings, searchTerm, filterStatus]);
+
 
   const handleGoBack = () => {
     navigate('/dashboard');
   };
 
-  const handleSelectPayment = (item) => {
-    // Di sini kita akan menambahkan item ke keranjang.
-    // Perhatikan: item yang ditambahkan ke keranjang harus memiliki struktur yang sama
-    // dengan yang diharapkan oleh cartItems (id, name, amount, status, etc.)
-    // Pastikan item dari backend memiliki properti yang relevan
-    addToCart(item.id); // Asumsi item.id dari backend sama
-    notifications.show({
-      title: 'Item Ditambahkan!',
-      message: `${item.description} berhasil ditambahkan ke keranjang.`, // Gunakan description dari backend
-      color: 'blue',
-      autoClose: 2000,
-    });
+  const handleSelectPayment = (item) => { 
+    addToCart(item);
   };
 
-  if (!currentUser) {
+  if (loading) {
     return (
       <Group position="center" style={{ minHeight: '100vh' }}>
         <Loader size="lg" />
-        <Text>Memuat sesi...</Text>
+        <Text>Memuat tagihan...</Text>
       </Group>
     );
   }
 
   return (
-    <Paper shadow="xl" radius="md" p="xl" style={{ maxWidth: 900, margin: '50px auto' }}>
+    <div style={{ maxWidth: 900, margin: '0 auto', padding: '20px' }}>
       <Stack spacing="xl">
         <Group position="apart">
           <Button variant="outline" onClick={handleGoBack}>&larr; Kembali ke Dashboard</Button>
@@ -120,22 +138,39 @@ function PaymentListPage() {
           <div></div>
         </Group>
 
-        {loading ? (
-          <Group position="center" style={{ minHeight: 200 }}>
-            <Loader size="lg" />
-            <Text>Memuat tagihan...</Text>
-          </Group>
-        ) : filteredPayments.length === 0 ? (
+        {/* Search and Filter Inputs */}
+        <Group grow spacing="md" mt="md">
+          <TextInput
+            placeholder="ITATS"
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.currentTarget.value)}
+            leftSection={<IconSearch size={16} />}
+            clearable // Menambahkan tombol X untuk membersihkan input
+          />
+          <Select
+            placeholder="Filter berdasarkan status"
+            data={[
+              { value: 'all', label: 'Semua Status' },
+              { value: 'unpaid', label: 'Belum Lunas' },
+              { value: 'paid', label: 'Lunas' },
+            ]}
+            value={filterStatus}
+            onChange={setFilterStatus}
+          />
+        </Group>
+
+        {filteredPayments.length === 0 ? (
           <Text align="center" size="lg" color="dimmed" mt="md">
-            Tidak ada tagihan {type.toUpperCase()} yang tersedia untuk Anda.
+            Tidak ada tagihan {type.toUpperCase()} yang tersedia untuk Anda dengan filter saat ini.
           </Text>
         ) : (
           <Table striped highlightOnHover withTableBorder withColumnBorders>
             <thead>
               <tr>
-                <th>ID</th> {/* Tambahkan kolom ID jika perlu */}
+                <th>ID</th>
                 <th>Deskripsi Tagihan</th>
                 <th>Jumlah</th>
+                <th>Bulan/Tahun</th>
                 <th>Status</th>
                 <th>Aksi</th>
               </tr>
@@ -143,11 +178,12 @@ function PaymentListPage() {
             <tbody>
               {filteredPayments.map((item) => (
                 <tr key={item.id}>
-                  <td>{item.id.substring(0, 8)}...</td> {/* Tampilkan sebagian ID */}
+                  <td>{item.id.substring(0, 8)}...</td>
                   <td>{item.description}</td>
                   <td>Rp {item.amount.toLocaleString('id-ID')}</td>
+                  <td>{item.month}/{item.year}</td>
                   <td>
-                    <Text color={item.status === 'paid' ? 'green' : 'orange'} weight={500}> {/* Pastikan status dari backend lowercase */}
+                    <Text color={item.status === 'paid' ? 'green' : 'orange'} weight={500}>
                       {item.status}
                     </Text>
                   </td>
@@ -155,7 +191,7 @@ function PaymentListPage() {
                     <Button
                       size="sm"
                       onClick={() => handleSelectPayment(item)}
-                      disabled={item.status === 'paid'} // Nonaktifkan jika sudah dibayar
+                      disabled={item.status === 'paid'}
                       variant={item.status === 'paid' ? 'light' : 'filled'}
                       color={item.status === 'paid' ? 'gray' : 'green'}
                     >
@@ -168,7 +204,7 @@ function PaymentListPage() {
           </Table>
         )}
       </Stack>
-    </Paper>
+    </div>
   );
 }
 
