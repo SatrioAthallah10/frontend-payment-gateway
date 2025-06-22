@@ -1,11 +1,9 @@
-// src/routes/Routes.jsx
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { AppShell, Loader, Group, Text, Stack } from '@mantine/core';
 import Navbar from '../components/Navbar';
 import { usePayment } from '../context/PaymentContext';
-import { notifications } from '@mantine/notifications'; // Import notifications
-
+import { notifications } from '@mantine/notifications';
 import LoginPage from '../pages/LoginPage';
 import DashboardPage from '../pages/DashboardPage';
 import PaymentListPage from '../pages/PaymentListPage';
@@ -22,34 +20,6 @@ function AppRoutes() {
   const AuthenticatedLayout = ({ children }) => {
     const navigate = useNavigate();
     const location = useLocation();
-
-    // Logic untuk menangani callback dari Midtrans
-    useEffect(() => {
-        const params = new URLSearchParams(location.search);
-        const transactionStatus = params.get('transaction_status');
-        const orderIdFromUrl = params.get('order_id'); // Ganti nama agar tidak ambigu
-        const grossAmount = params.get('gross_amount');
-
-        // Hapus query params dari URL agar tidak diproses lagi saat refresh
-        if (location.search.includes('transaction_status') || location.search.includes('order_id')) {
-          navigate(location.pathname, { replace: true });
-        }
-
-        // Panggil checkPaymentStatus hanya jika ada orderIdFromUrl dan transactionStatus
-        if (orderIdFromUrl && transactionStatus) {
-            console.log(`Midtrans Callback: Status=${transactionStatus}, Order ID=${orderIdFromUrl}`);
-
-            // Panggil checkPaymentStatus dengan Order ID yang valid
-            // checkPaymentStatus() sendiri yang akan menampilkan notifikasi.
-            checkPaymentStatus(orderIdFromUrl); // Panggil checkPaymentStatus dengan Order ID
-
-            // Setelah memproses callback, arahkan ke halaman laporan.
-            // Ini akan memastikan user melihat laporan setelah pembayaran.
-            navigate('/reports');
-
-        }
-    }, [location.search, navigate, checkPaymentStatus]); // Hapus transactions dari dependency jika tidak digunakan langsung di sini
-
 
     React.useEffect(() => {
       if (!isAuthLoading && !currentUser) {

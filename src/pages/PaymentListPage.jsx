@@ -1,4 +1,3 @@
-// src/pages/PaymentListPage.jsx
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { usePayment } from '../context/PaymentContext';
@@ -11,25 +10,23 @@ import {
   Group,
   Stack,
   Loader,
-  TextInput, // Untuk input pencarian
-  Select     // Untuk filter dropdown
+  TextInput,
+  Select
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { API_BASE_URL } from '../config/api';
-import { IconSearch } from '@tabler/icons-react'; // Import icon search
+import { IconSearch } from '@tabler/icons-react';
 
 function PaymentListPage() {
   const { type } = useParams();
   const navigate = useNavigate();
   const { addToCart, currentUser, apiToken, isAuthLoading } = usePayment();
-  const [allBillings, setAllBillings] = useState([]); // Menyimpan semua data billing dari backend
-  const [filteredPayments, setFilteredPayments] = useState([]); // Data yang ditampilkan setelah filter
+  const [allBillings, setAllBillings] = useState([]);
+  const [filteredPayments, setFilteredPayments] = useState([]);
   const [pageTitle, setPageTitle] = useState('');
   const [loading, setLoading] = useState(true);
-
-  // State untuk pencarian dan filter
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all'); // 'all', 'paid', 'unpaid'
+  const [filterStatus, setFilterStatus] = useState('all');
 
   useEffect(() => {
     if (isAuthLoading) {
@@ -65,7 +62,7 @@ function PaymentListPage() {
 
         if (response.ok) {
           const fetchedBillings = Array.isArray(data.data) ? data.data : [];
-          setAllBillings(fetchedBillings); // Simpan semua data yang diambil
+          setAllBillings(fetchedBillings);
           setPageTitle(type.toUpperCase() === 'SPP' ? 'Daftar Tagihan SPP' : 'Daftar Tagihan Non-SPP');
         } else {
           notifications.show({
@@ -92,18 +89,15 @@ function PaymentListPage() {
     fetchBillings();
   }, [type, navigate, currentUser, apiToken, isAuthLoading]);
 
-  // useEffect untuk menerapkan pencarian dan filter setiap kali allBillings, searchTerm, atau filterStatus berubah
   useEffect(() => {
     let currentFiltered = allBillings;
 
-    // Filter berdasarkan search term
     if (searchTerm) {
       currentFiltered = currentFiltered.filter(item =>
         item.description.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
-    // Filter berdasarkan status
     if (filterStatus !== 'all') {
       currentFiltered = currentFiltered.filter(item => item.status === filterStatus);
     }
@@ -138,14 +132,13 @@ function PaymentListPage() {
           <div></div>
         </Group>
 
-        {/* Search and Filter Inputs */}
         <Group grow spacing="md" mt="md">
           <TextInput
             placeholder="ITATS"
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.currentTarget.value)}
             leftSection={<IconSearch size={16} />}
-            clearable // Menambahkan tombol X untuk membersihkan input
+            clearable
           />
           <Select
             placeholder="Filter berdasarkan status"

@@ -1,4 +1,3 @@
-// src/pages/CartPage.jsx
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePayment } from '../context/PaymentContext';
@@ -24,7 +23,6 @@ function CartPage() {
     }
   }, [currentUser, navigate, isAuthLoading]);
 
-  // Hitung total pembayaran
   const totalAmount = cartItems.reduce((sum, item) => sum + (item.amount || 0), 0);
 
   const handleCheckout = async () => {
@@ -47,20 +45,9 @@ function CartPage() {
       return;
     }
 
-    // Panggil fungsi checkout dari context yang sekarang sudah terintegrasi Midtrans
-    // Kirimkan array cartItems sebagai parameter kedua
     const checkoutSuccess = await checkout(currentUser.id, cartItems); 
     
-    // Redirect setelah user kembali dari Midtrans, status akan diupdate via check-status
     if (checkoutSuccess) {
-      // Kita tidak redirect langsung ke /reports lagi, karena window.location.href sudah mengarahkan ke Midtrans
-      // Namun, jika ada kasus redirect gagal, kita bisa ke dashboard
-      // notifications.show({
-      //   title: 'Pembayaran Diinisiasi',
-      //   message: 'Silakan selesaikan pembayaran di Midtrans.',
-      //   color: 'blue',
-      // });
-      // navigate('/dashboard'); // Atau ke halaman lain yang sesuai
     } else {
         console.log("Checkout process did not fully succeed, staying on cart page.");
     }

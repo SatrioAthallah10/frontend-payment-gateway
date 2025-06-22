@@ -1,4 +1,3 @@
-// src/context/PaymentContext.jsx
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { dummyPaymentItems } from '../data/dummyData';
 import { notifications } from '@mantine/notifications';
@@ -14,7 +13,7 @@ const PaymentContext = createContext();
 
 export const PaymentProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState([]);
-  const [transactions, setTransactions] = useState([]);
+  const [transactions, setTransactions] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [apiToken, setApiToken] = useState(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
@@ -23,6 +22,7 @@ export const PaymentProvider = ({ children }) => {
     const loadAuthSession = () => {
       const storedToken = localStorage.getItem('api_token');
       let storedUserString = localStorage.getItem('current_user');
+      const storedTransactions = localStorage.getItem('transactions');
 
       if (
         storedUserString === "undefined" ||
@@ -39,6 +39,20 @@ export const PaymentProvider = ({ children }) => {
           const parsedUser = JSON.parse(storedUserString);
           setApiToken(storedToken);
           setCurrentUser(parsedUser);
+          if (storedTransactions) {
+            const parsedTransactions = JSON.parse(storedTransactions);
+            const validatedTransactions = parsedTransactions.map(t => ({
+                ...t,
+                totalAmount: typeof t.totalAmount === 'number' ? t.totalAmount : 0,
+                items: Array.isArray(t.items) ? t.items : []
+            }));
+            setTransactions(validatedTransactions);
+            console.log("Auth useEffect: Loaded transactions from localStorage:", validatedTransactions);
+          } else {
+            setTransactions([]);
+            console.log("Auth useEffect: No transactions found in localStorage, initializing empty array.");
+          }
+
         } catch (error) {
           notifications.show({
             title: 'Sesi Rusak',
@@ -47,19 +61,34 @@ export const PaymentProvider = ({ children }) => {
           });
           localStorage.removeItem('api_token');
           localStorage.removeItem('current_user');
+          localStorage.removeItem('transactions');
+          console.error("Auth useEffect: Failed to parse stored user or transactions from localStorage, cleared.", error);
         }
+      } else {
+        setTransactions([]);
+        console.log("Auth useEffect: No user session, initializing empty transactions array.");
       }
       setIsAuthLoading(false);
+      console.log("Auth useEffect: Auth loading finished.");
     };
 
     loadAuthSession();
   }, []);
+
+  useEffect(() => {
+    if (transactions !== null) {
+      localStorage.setItem('transactions', JSON.stringify(transactions));
+      console.log("Transactions useEffect: Transactions saved to localStorage:", transactions);
+    }
+  }, [transactions]);
+
 
   const login = (user, token) => {
     setCurrentUser(user);
     setApiToken(token);
     localStorage.setItem('api_token', token);
     localStorage.setItem('current_user', JSON.stringify(user));
+    console.log("Login function: User stored in localStorage.");
   };
 
   const logout = async () => {
@@ -92,8 +121,10 @@ export const PaymentProvider = ({ children }) => {
     setApiToken(null);
     localStorage.removeItem('api_token');
     localStorage.removeItem('current_user');
+    localStorage.removeItem('transactions');
     setCartItems([]);
     setTransactions([]);
+    console.log("Logout function: Sesi and transactions cleared from localStorage.");
   };
 
   const addToCart = (billingItem) => {
@@ -124,89 +155,6 @@ export const PaymentProvider = ({ children }) => {
       autoClose: 2000,
     });
   };
-
-  // FUNGSI checkPaymentStatus YANG DIPERBAIKI DENGAN KONFIRMASI TERAKHIR
-  const checkPaymentStatus = async (billingId) => { // Menerima billingId
-    if (!apiToken || !currentUser) {
-        notifications.show({
-            title: 'Sesi Tidak Valid',
-            message: 'Anda harus login untuk mengecek status pembayaran.',
-            color: 'red',
-        });
-        return false;
-    }
-
-    if (!billingId) { // Pengecekan tambahan untuk billingId
-        console.error("checkPaymentStatus: billingId is missing.");
-        notifications.show({
-            title: 'Error Cek Status',
-            message: 'ID Tagihan tidak ditemukan untuk cek status.',
-            color: 'red',
-        });
-        return false;
-    }
-
-    try {
-        // SESUAI KONFIRMASI TERAKHIR: POST ke URL dengan billingId di path, TANPA body
-        const response = await fetch(`${API_BASE_URL}/v1/user/billings/check-status/${billingId}`, {
-            method: 'POST', // Metode POST
-            headers: {
-                'Accept': 'application/json',
-                'Authorization': `Bearer ${apiToken}`
-            },
-            // Tidak ada 'body' di sini
-        });
-
-        const data = await response.json();
-        console.log("Check Status Response:", data);
-
-        // PERBAIKAN: Gunakan billingId untuk notifikasi
-        const displayId = billingId ? billingId.substring(0,8) + '...' : 'Tagihan';
-
-        if (response.ok && data.status === true) {
-            // Asumsi Christian mengirim transaction_status di data.data.transaction_status
-            const transactionStatusFromBackend = data.data?.transaction_status || 'unknown';
-
-            if (transactionStatusFromBackend === 'settlement') {
-                // Perbarui transaksi di state frontend (jika ada)
-                setTransactions(prev => prev.map(t => t.billing_id === billingId ? { ...t, status: 'Paid' } : t));
-                notifications.show({
-                    title: 'Pembayaran Berhasil Dikonfirmasi!',
-                    message: `Tagihan ID ${displayId} telah LUNAS.`,
-                    color: 'green',
-                    autoClose: 5000,
-                });
-                return true;
-            } else {
-                notifications.show({
-                    title: 'Status Pembayaran',
-                    message: `Tagihan ID ${displayId} : ${transactionStatusFromBackend.toUpperCase()}`,
-                    color: 'yellow',
-                    autoClose: 5000,
-                });
-                return false;
-            }
-        } else {
-            notifications.show({
-                title: 'Gagal Cek Status',
-                message: data.message || `Terjadi kesalahan saat cek status untuk ID ${displayId}.`,
-                color: 'red',
-                autoClose: 5000,
-            });
-            return false;
-        }
-    } catch (error) {
-        notifications.show({
-            title: 'Error Koneksi',
-            message: `Tidak dapat terhubung ke server untuk cek status ID ${displayId}.`,
-            color: 'red',
-            autoClose: 5000,
-        });
-        console.error('Network Error during check status:', error);
-        return false;
-    }
-  };
-
 
   const checkout = async (userId, selectedBillings) => {
     if (selectedBillings.length === 0) {
@@ -260,11 +208,11 @@ export const PaymentProvider = ({ children }) => {
                     items: [{ id: itemToPay.id, description: itemToPay.description, amount: itemToPay.amount }],
                     totalAmount: itemToPay.amount,
                     date: new Date().toISOString(),
-                    status: 'Pending',
+                    status: 'Initiated',
                     snap_token: snap_token,
                     redirect_url: redirect_url,
-                    billing_id: itemToPay.id, // Simpan ID billing
-                    order_id: billing.order_id // Simpan order_id
+                    billing_id: itemToPay.id,
+                    order_id: billing.order_id
                 };
                 setTransactions((prevTransactions) => [...prevTransactions, newTransaction]);
                 setCartItems([]);
@@ -276,7 +224,7 @@ export const PaymentProvider = ({ children }) => {
                     autoClose: 3000,
                 });
 
-                window.location.href = redirect_url;
+                window.open(redirect_url, '_blank');
                 return true;
             } else {
                 notifications.show({
@@ -329,7 +277,6 @@ export const PaymentProvider = ({ children }) => {
       addToCart,
       removeFromCart,
       checkout,
-      checkPaymentStatus
     }}>
       {children}
     </PaymentContext.Provider>

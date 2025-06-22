@@ -12,87 +12,32 @@ import {
   Anchor,
   List,
   ThemeIcon,
-  Loader 
+  Loader
 } from '@mantine/core';
-import { IconCircleCheck, IconCircleX } from '@tabler/icons-react';
+import { IconCircleCheck, IconCircleX, IconClock } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
-import { API_BASE_URL } from '../config/api';
 
 function ReportPage() {
-  const { transactions, currentUser, apiToken, isAuthLoading } = usePayment(); 
+  const { transactions, currentUser } = usePayment(); 
   const navigate = useNavigate();
-  const [paidBillings, setPaidBillings] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); 
 
   useEffect(() => {
-    if (!isAuthLoading && (!currentUser || !apiToken)) {
+    if (!currentUser) {
       notifications.show({
-        title: 'Sesi Habis',
+        title: 'Akses Ditolak',
         message: 'Anda harus login untuk melihat laporan ini.',
         color: 'red',
       });
       navigate('/');
     }
-  }, [currentUser, navigate, apiToken, isAuthLoading]);
+  }, [currentUser, navigate]);
 
-  const fetchPaidBillings = async () => {
-    setLoading(true);
-    if (!apiToken) {
-      setLoading(false);
-      return;
-    }
-    try {
-      const response = await fetch(`${API_BASE_URL}/v1/user/billings`, { 
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${apiToken}`
-        },
-      });
+  const userTransactionsToDisplay = transactions.filter(
+    (trx) => trx.userId === currentUser?.id 
+  );
 
-      const data = await response.json();
-      console.log("Fetch Billings for Report Page Response:", data); 
-
-      if (response.ok) {
-        const paidItems = Array.isArray(data.data) 
-                          ? data.data.filter(item => item.status === 'paid') 
-                          : [];
-        setPaidBillings(paidItems);
-        notifications.show({
-            title: 'Laporan Dimuat',
-            message: 'Riwayat pembayaran berhasil diambil.',
-            color: 'green',
-            autoClose: 2000
-        });
-      } else {
-        notifications.show({
-          title: 'Gagal Memuat Laporan',
-          message: data.message || 'Terjadi kesalahan saat mengambil laporan.',
-          color: 'red',
-        });
-        console.error('Fetch Report Billings Error:', data);
-        setPaidBillings([]);
-      }
-    } catch (error) {
-      notifications.show({
-        title: 'Error Koneksi',
-        message: 'Tidak dapat terhubung ke server untuk mengambil laporan.',
-        color: 'red',
-      });
-      console.error('Network Error during fetch report billings:', error);
-      setPaidBillings([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (!isAuthLoading && currentUser && apiToken) { 
-      fetchPaidBillings();
-    }
-  }, [apiToken, currentUser, isAuthLoading]); 
-
-  if (isAuthLoading || !currentUser || loading) { 
+  if (!currentUser) {
     return (
       <Group position="center" style={{ minHeight: '100vh' }}>
         <Loader size="lg" />
@@ -101,10 +46,8 @@ function ReportPage() {
     );
   }
 
-  const userTransactionsToDisplay = paidBillings;
-
   return (
-    <Paper shadow="xl" radius="md" p="xl" style={{ maxWidth: 1000, margin: '50px auto' }}>
+    <div style={{ maxWidth: 1000, margin: '0 auto', padding: '20px' }}>
       <Stack spacing="xl">
         <Group position="apart">
           <Button variant="outline" onClick={() => navigate('/dashboard')}>&larr; Kembali ke Dashboard</Button>
@@ -120,11 +63,11 @@ function ReportPage() {
           <Table striped highlightOnHover withTableBorder withColumnBorders>
             <thead>
               <tr>
-                <th>ID</th>
+                <th>ID Transaksi</th>
                 <th>Deskripsi Pembayaran</th>
                 <th>Jumlah</th>
-                <th>Bulan/Tahun</th> 
                 <th>Status</th>
+                <th>Link Pembayaran</th>
               </tr>
             </thead>
             <tbody>
@@ -132,19 +75,34 @@ function ReportPage() {
                 <tr key={trx.id}>
                   <td>{trx.id.substring(0, 8)}...</td>
                   <td>
-                    <Text>{trx.description}</Text> 
+                    <Text>{trx.items[0]?.description || 'N/A'}</Text>
                   </td>
-                  <td>Rp {trx.amount.toLocaleString('id-ID')}</td> 
-                  <td>{trx.month}/{trx.year}</td> 
+                  <td>Rp {trx.totalAmount.toLocaleString('id-ID')}</td>
                   <td>
                     <Group spacing="xs" noWrap>
-                      <ThemeIcon size="sm" radius="xl" color={trx.status === 'paid' ? 'teal' : 'red'}>
-                        {trx.status === 'paid' ? <IconCircleCheck size={16} /> : <IconCircleX size={16} />}
+                      <ThemeIcon size="sm" radius="xl" color={
+                        trx.status === 'Paid' ? 'teal' : 
+                        trx.status === 'Pending' || trx.status === 'Initiated' ? 'blue' : 'gray' 
+                      }>
+                        {trx.status === 'Paid' ? <IconCircleCheck size={16} /> : 
+                         trx.status === 'Pending' || trx.status === 'Initiated' ? <IconClock size={16} /> : <IconCircleX size={16} />}
                       </ThemeIcon>
-                      <Text color={trx.status === 'paid' ? 'teal' : 'red'} weight={500}>
-                        {trx.status}
+                      <Text color={
+                        trx.status === 'Paid' ? 'teal' : 
+                        trx.status === 'Pending' || trx.status === 'Initiated' ? 'blue' : 'gray'
+                      } weight={500} style={{ whiteSpace: 'nowrap' }}>
+                        {trx.status || 'N/A'}
                       </Text>
                     </Group>
+                  </td>
+                  <td>
+                    {trx.status === 'Initiated' || trx.status === 'Pending' ? (
+                      <Anchor href={trx.redirect_url} target="_blank" rel="noopener noreferrer">
+                        Lanjutkan Pembayaran
+                      </Anchor>
+                    ) : (
+                      <Text c="dimmed">Selesai</Text>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -152,7 +110,7 @@ function ReportPage() {
           </Table>
         )}
       </Stack>
-    </Paper>
+    </div>
   );
 }
 

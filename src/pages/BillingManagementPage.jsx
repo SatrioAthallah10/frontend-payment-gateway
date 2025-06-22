@@ -1,4 +1,3 @@
-// src/pages/BillingManagementPage.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePayment } from '../context/PaymentContext';
@@ -30,14 +29,10 @@ function BillingManagementPage() {
   const [loading, setLoading] = useState(true);
   const [modalOpened, setModalOpened] = useState(false);
   const [editingBilling, setEditingBilling] = useState(null);
-
-  // State untuk pencarian dan filter
   const [searchTerm, setSearchTerm] = useState('');
   const [filterDebtId, setFilterDebtId] = useState('all');
   const [filterUserId, setFilterUserId] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
-
-  // Form states (untuk modal tambah/edit)
   const [billingAmount, setBillingAmount] = useState('');
   const [billingDescription, setBillingDescription] = useState('');
   const [billingMonth, setBillingMonth] = useState(new Date().getMonth() + 1);
@@ -156,28 +151,23 @@ function BillingManagementPage() {
     }
   }, [apiToken, currentUser, isAuthLoading]);
 
-  // useEffect untuk menerapkan pencarian dan filter
   useEffect(() => {
     let currentFiltered = allBillings;
 
-    // Filter berdasarkan search term (deskripsi)
     if (searchTerm) {
       currentFiltered = currentFiltered.filter(item =>
         item.description.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
-    // Filter berdasarkan debt_id
     if (filterDebtId !== 'all') {
       currentFiltered = currentFiltered.filter(item => item.debt_id?.toString() === filterDebtId);
     }
 
-    // Filter berdasarkan user_id
     if (filterUserId !== 'all') {
       currentFiltered = currentFiltered.filter(item => item.user_id?.toString() === filterUserId);
     }
 
-    // Filter berdasarkan status
     if (filterStatus !== 'all') {
       currentFiltered = currentFiltered.filter(item => item.status === filterStatus);
     }
@@ -236,7 +226,6 @@ function BillingManagementPage() {
         });
         setModalOpened(false);
         setEditingBilling(null);
-        // Reset form states
         setBillingAmount('');
         setBillingDescription('');
         setBillingMonth(new Date().getMonth() + 1);
@@ -244,7 +233,7 @@ function BillingManagementPage() {
         setBillingDebtId('');
         setBillingUserId('');
         setBillingStatus('unpaid');
-        fetchBillings(); // Refresh daftar billings
+        fetchBillings();
       } else {
         notifications.show({
           title: 'Gagal Menyimpan',
@@ -289,7 +278,7 @@ function BillingManagementPage() {
           message: 'Tagihan berhasil dihapus.',
           color: 'green',
         });
-        fetchBillings(); // Refresh daftar billings
+        fetchBillings();
       } else {
         notifications.show({
           title: 'Gagal Menghapus',
@@ -351,29 +340,27 @@ function BillingManagementPage() {
             Tambah Tagihan Baru
           </Button>
         </Group>
-
-        {/* Search and Filter Inputs */}
         <Group grow spacing="md" mt="md">
           <TextInput
             placeholder="Cari berdasarkan deskripsi"
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.currentTarget.value)}
             leftSection={<IconSearch size={16} />}
-            clearable // Hapus ={true} karena prop clearable itu boolean
+            clearable
           />
           <Select
             placeholder="Filter Kategori"
             data={[{ value: 'all', label: 'Semua Kategori' }, ...debts]}
             value={filterDebtId}
             onChange={setFilterDebtId}
-            clearable // Hapus ={true}
+            clearable
           />
           <Select
             placeholder="Filter Pengguna"
             data={[{ value: 'all', label: 'Semua Pengguna' }, ...users]}
             value={filterUserId}
             onChange={setFilterUserId}
-            clearable // Hapus ={true}
+            clearable
           />
           <Select
             placeholder="Filter Status"
@@ -384,7 +371,7 @@ function BillingManagementPage() {
             ]}
             value={filterStatus}
             onChange={setFilterStatus}
-            clearable // Hapus ={true}
+            clearable
           />
         </Group>
 
@@ -412,15 +399,14 @@ function BillingManagementPage() {
               </tr>
             </thead>
             <tbody>
-              {/* PERBAIKAN: Pastikan tidak ada whitespace di antara tag <td> di JSX */}
               {filteredBillings.map((billing) => (
                 <tr key={billing.id}>
-                  <td>{billing.id.substring(0, 8)}...</td>{/* Hapus spasi di sini */}
-                  <td>{billing.description}</td>{/* Hapus spasi di sini */}
-                  <td>Rp {billing.amount.toLocaleString('id-ID')}</td>{/* Hapus spasi di sini */}
-                  <td>{billing.month}/{billing.year}</td>{/* Hapus spasi di sini */}
-                  <td>{debts.find(d => d.value === billing.debt_id?.toString())?.label || 'Tidak Diketahui'}</td>{/* Hapus spasi di sini */}
-                  <td>{users.find(u => u.value === billing.user_id?.toString())?.label || 'Tidak Diketahui'}</td>{/* Hapus spasi di sini */}
+                  <td>{billing.id.substring(0, 8)}...</td>
+                  <td>{billing.description}</td>
+                  <td>Rp {billing.amount.toLocaleString('id-ID')}</td>
+                  <td>{billing.month}/{billing.year}</td>
+                  <td>{debts.find(d => d.value === billing.debt_id?.toString())?.label || 'Tidak Diketahui'}</td>
+                  <td>{users.find(u => u.value === billing.user_id?.toString())?.label || 'Tidak Diketahui'}</td>
                   <td>
                     <Badge color={billing.status === 'paid' ? 'green' : billing.status === 'unpaid' ? 'orange' : 'gray'}>
                       {billing.status || 'Tidak Diketahui'}
@@ -443,7 +429,6 @@ function BillingManagementPage() {
         )}
       </Stack>
 
-      {/* Modal untuk Tambah/Edit Billing */}
       <Modal opened={modalOpened} onClose={() => setModalOpened(false)} title={editingBilling ? "Edit Tagihan" : "Tambah Tagihan Baru"}>
         <Stack spacing="md">
           <TextInput

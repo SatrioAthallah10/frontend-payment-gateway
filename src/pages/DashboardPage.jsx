@@ -1,9 +1,7 @@
-// src/pages/DashboardPage.jsx
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePayment } from '../context/PaymentContext';
 import {
-  // Paper, // Pastikan ini dihapus
   Title,
   Text,
   Button,
@@ -23,7 +21,6 @@ function DashboardPage() {
     }
   }, [currentUser, navigate, isAuthLoading]);
 
-  // Pastikan semua handle functions didefinisikan di sini
   const handleSPPClick = () => {
     navigate('/payments/spp');
   };
@@ -69,7 +66,6 @@ function DashboardPage() {
   const isAdmin = currentUser.role === 'superadmin';
 
   return (
-    // Pastikan ada div wrapper dengan styling untuk layout
     <div style={{ maxWidth: 800, margin: '0 auto', textAlign: 'center', padding: '20px' }}>
       <Stack align="center" spacing="xl">
         <Title order={1}>Selamat Datang, {currentUser.name || currentUser.email}!</Title>

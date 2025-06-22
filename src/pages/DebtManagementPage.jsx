@@ -1,4 +1,3 @@
-// src/pages/DebtManagementPage.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePayment } from '../context/PaymentContext';
@@ -12,28 +11,24 @@ import {
   Stack,
   Loader,
   Modal,
-  TextInput, // Untuk input pencarian
+  TextInput,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { API_BASE_URL } from '../config/api';
-import { IconEdit, IconTrash, IconPlus, IconSearch } from '@tabler/icons-react'; // Import IconSearch
+import { IconEdit, IconTrash, IconPlus, IconSearch } from '@tabler/icons-react';
 
 function DebtManagementPage() {
   const navigate = useNavigate();
   const { currentUser, apiToken, isAuthLoading } = usePayment();
-  const [allDebts, setAllDebts] = useState([]); // Menyimpan semua data Debt dari backend
-  const [filteredDebts, setFilteredDebts] = useState([]); // Data yang ditampilkan setelah filter
+  const [allDebts, setAllDebts] = useState([]);
+  const [filteredDebts, setFilteredDebts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalOpened, setModalOpened] = useState(false);
   const [editingDebt, setEditingDebt] = useState(null);
-
-  // State untuk pencarian
   const [searchTerm, setSearchTerm] = useState('');
-
   const [debtName, setDebtName] = useState('');
   const [debtDescription, setDebtDescription] = useState('');
 
-  // Pastikan hanya admin yang bisa mengakses halaman ini
   useEffect(() => {
     if (!isAuthLoading && (!currentUser || currentUser.role !== 'superadmin')) {
       notifications.show({
@@ -45,7 +40,6 @@ function DebtManagementPage() {
     }
   }, [currentUser, navigate, isAuthLoading]);
 
-  // Fungsi untuk mengambil daftar Debt dari backend
   const fetchDebts = async () => {
     setLoading(true);
     if (!apiToken) {
@@ -66,7 +60,7 @@ function DebtManagementPage() {
 
       if (response.ok) {
         const fetchedDebts = Array.isArray(data.data.debts) ? data.data.debts : [];
-        setAllDebts(fetchedDebts); // Simpan semua data yang diambil
+        setAllDebts(fetchedDebts);
         notifications.show({
             title: 'Data Berhasil Dimuat',
             message: 'Daftar kategori pembayaran berhasil diambil.',
@@ -101,11 +95,9 @@ function DebtManagementPage() {
     }
   }, [apiToken, currentUser, isAuthLoading]);
 
-  // useEffect untuk menerapkan pencarian setiap kali allDebts atau searchTerm berubah
   useEffect(() => {
     let currentFiltered = allDebts;
 
-    // Filter berdasarkan search term
     if (searchTerm) {
       currentFiltered = currentFiltered.filter(item =>
         item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -164,7 +156,7 @@ function DebtManagementPage() {
         setEditingDebt(null);
         setDebtName('');
         setDebtDescription('');
-        fetchDebts(); // Refresh daftar debts
+        fetchDebts();
       } else {
         notifications.show({
           title: 'Gagal Menyimpan',
@@ -209,7 +201,7 @@ function DebtManagementPage() {
           message: 'Kategori pembayaran berhasil dihapus.',
           color: 'green',
         });
-        fetchDebts(); // Refresh daftar debts
+        fetchDebts();
       } else {
         notifications.show({
           title: 'Gagal Menghapus',
@@ -257,7 +249,6 @@ function DebtManagementPage() {
           </Button>
         </Group>
 
-        {/* Input Pencarian */}
         <TextInput
           placeholder="ITATS"
           value={searchTerm}
@@ -307,7 +298,6 @@ function DebtManagementPage() {
         )}
       </Stack>
 
-      {/* Modal untuk Tambah/Edit Debt */}
       <Modal opened={modalOpened} onClose={() => setModalOpened(false)} title={editingDebt ? "Edit Kategori Pembayaran" : "Tambah Kategori Pembayaran"}>
         <Stack spacing="md">
           <TextInput
