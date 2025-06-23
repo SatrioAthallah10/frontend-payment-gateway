@@ -173,7 +173,7 @@ function PaymentListPage() {
                 <tr key={item.id}>
                   <td>{item.id.substring(0, 8)}...</td>
                   <td>{item.description}</td>
-                  <td>Rp {item.amount.toLocaleString('id-ID')}</td>
+                  <td>Rp {parseInt(item.amount).toLocaleString('id-ID')}</td>
                   <td>{item.month}/{item.year}</td>
                   <td>
                     <Text color={item.status === 'paid' ? 'green' : 'orange'} weight={500}>
