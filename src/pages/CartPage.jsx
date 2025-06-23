@@ -23,8 +23,7 @@ function CartPage() {
     }
   }, [currentUser, navigate, isAuthLoading]);
 
-  const totalAmount = cartItems.reduce((sum, item) => sum + (item.amount || 0), 0);
-
+  const totalAmount = cartItems.reduce((sum, item) => parseInt(sum) + (parseInt(item.amount) || 0), 0);
   const handleCheckout = async () => {
     if (cartItems.length === 0) {
       notifications.show({
@@ -89,7 +88,7 @@ function CartPage() {
                 {cartItems.map((item) => (
                   <tr key={item.id}>
                     <td>{item.description}</td>
-                    <td>Rp {(item.amount || 0).toLocaleString('id-ID')}</td> 
+                    <td>Rp {(parseInt(item.amount) || 0).toLocaleString('id-ID')}</td> 
                     <td>
                       <Button
                         size="sm"
