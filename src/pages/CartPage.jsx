@@ -12,7 +12,7 @@ import {
   Loader
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-
+import moment from 'moment';
 function CartPage() {
   const { cartItems, removeFromCart, checkout, currentUser, isAuthLoading } = usePayment();
   const navigate = useNavigate();
@@ -87,9 +87,9 @@ function CartPage() {
               <tbody>
                 {cartItems.map((item) => (
                   <tr key={item.id}>
-                    <td>{item.description}</td>
-                    <td>Rp {(parseInt(item.amount) || 0).toLocaleString('id-ID')}</td> 
-                    <td>
+                    <td style={{ textAlign: 'center' }}>{item.debt.name} {moment(item.year + '-' + item.month + '-01').locale('id').format('MMMM YYYY')}</td>
+                    <td style={{ textAlign: 'center' }}>Rp {(parseInt(item.amount) || 0).toLocaleString('id-ID')}</td>
+                    <td style={{ textAlign: 'center' }}>
                       <Button
                         size="sm"
                         color="red"

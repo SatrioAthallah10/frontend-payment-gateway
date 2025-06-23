@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { redirect, useNavigate } from 'react-router-dom';
 import { usePayment } from '../context/PaymentContext';
 import {
   Paper,
@@ -27,6 +27,7 @@ function ReportPage() {
   const { transactions, currentUser } = usePayment(); 
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false); 
+  const [allBillings, setAllBillings] = useState([]);
 
   const handlePayment = async (billingId) => {
     setLoading(true);
@@ -50,6 +51,18 @@ function ReportPage() {
       setLoading(false);
     }
   };
+
+  const redirectVendor = (url) => {
+    if (!url) {
+      notifications.show({
+        title: 'Error',
+        message: 'URL redirect tidak tersedia untuk transaksi ini.',
+        color: 'red',
+      });
+      return;
+    }
+    window.open(url, '_blank', 'noopener,noreferrer');
+  }
   useEffect(() => {
     if (!currentUser) {
       notifications.show({
@@ -59,11 +72,40 @@ function ReportPage() {
       });
       navigate('/');
     }
-  }, [currentUser, navigate]);
 
-  const userTransactionsToDisplay = transactions.filter(
-    (trx) => trx.userId === currentUser?.id 
-  );
+    const fetchBillings = async () => {
+          setLoading(true);
+    
+          try {
+            const response = await axios.get(`${API_BASE_URL}/v1/user/billings`, {
+              headers: {
+                'Accept': 'application/json',
+                'Authorization': `Bearer ${apiToken}`,
+              },
+            });    
+            const data = response?.data?.data;
+            console.log("Fetch Billings Response (ReportPage):", data);
+            setAllBillings(data || []);
+          } catch (error) {
+            notifications.show({
+              title: 'Error Koneksi',
+              message: 'Tidak dapat terhubung ke server untuk mengambil tagihan. Pastikan backend berjalan.',
+              color: 'red',
+            });
+            console.error('Network Error during fetch billings:', error);
+            setAllBillings([]);
+          } finally {
+            setLoading(false);
+          }
+        };
+    
+        fetchBillings();
+      }, [currentUser, navigate, apiToken]);
+      
+      
+    const userTransactionsToDisplay = allBillings.filter((trx) => {
+      return (trx.response_data || trx.payment_status == 'pending') || trx.status == 'paid';
+    });
 
   if (!currentUser) {
     return (
@@ -102,34 +144,34 @@ function ReportPage() {
                 <tr key={trx.id}>
                   <td>{trx.id.substring(0, 8)}...</td>
                   <td>
-                    <Text>{trx.items[0]?.description || 'N/A'}</Text>
+                    <Text>{trx.description || 'N/A'}</Text>
                   </td>
-                  <td>Rp {trx.totalAmount.toLocaleString('id-ID')}</td>
+                  <td>Rp {parseInt(trx.amount).toLocaleString('id-ID')}</td>
                   <td>
                     <Group spacing="xs" noWrap>
                       <ThemeIcon size="sm" radius="xl" color={
                         trx.status === 'Paid' ? 'teal' : 
-                        trx.status === 'Pending' || trx.status === 'Initiated' ? 'blue' : 'gray' 
+                        trx.status === 'Pending' || trx.payment_status === 'pending' ? 'blue' : 'gray' 
                       }>
                         {trx.status === 'Paid' ? <IconCircleCheck size={16} /> : 
-                         trx.status === 'Pending' || trx.status === 'Initiated' ? <IconClock size={16} /> : <IconCircleX size={16} />}
+                         trx.status === 'Pending' || trx.payment_status === 'pending' ? <IconClock size={16} /> : <IconCircleX size={16} />}
                       </ThemeIcon>
                       <Text color={
                         trx.status === 'Paid' ? 'teal' : 
-                        trx.status === 'Pending' || trx.status === 'Initiated' ? 'blue' : 'gray'
+                        trx.status === 'Pending' || trx.payment_status === 'pending' ? 'blue' : 'gray'
                       } weight={500} style={{ whiteSpace: 'nowrap' }}>
                         {trx.status || 'N/A'}
                       </Text>
                     </Group>
                   </td>
                   <td>
-                    {trx.status === 'Initiated' || trx.status === 'Pending' ? (
-                      <div>
+                    {trx.payment_status === 'pending' || trx.status === 'Pending' ? (
+                      <div style={{ display: 'flex', gap: '1rem' }}>
 
-                        <Anchor href={trx.redirect_url} target="_blank" rel="noopener noreferrer">
+                        <Button onClick={() => redirectVendor(trx?.response_data?.redirect_url)} rel="noopener noreferrer">
                           Lanjutkan Pembayaran
-                        </Anchor>
-                        <Button onClick={() => handlePayment(trx?.billing_id)}>Check Status</Button>
+                        </Button>
+                        <Button onClick={() => handlePayment(trx?.id)}>Check Status</Button>
                       </div>
                     ) : (
                       <Text c="dimmed">Selesai</Text>

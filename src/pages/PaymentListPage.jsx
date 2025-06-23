@@ -17,10 +17,12 @@ import { notifications } from '@mantine/notifications';
 import { API_BASE_URL } from '../config/api';
 import { IconSearch } from '@tabler/icons-react';
 
+import moment from 'moment';
+
 function PaymentListPage() {
   const { type } = useParams();
   const navigate = useNavigate();
-  const { addToCart, currentUser, apiToken, isAuthLoading } = usePayment();
+  const { addToCart, currentUser, apiToken, isAuthLoading, cartItems } = usePayment();
   const [allBillings, setAllBillings] = useState([]);
   const [filteredPayments, setFilteredPayments] = useState([]);
   const [pageTitle, setPageTitle] = useState('');
@@ -63,7 +65,8 @@ function PaymentListPage() {
         if (response.ok) {
           const fetchedBillings = Array.isArray(data.data) ? data.data : [];
           setAllBillings(fetchedBillings);
-          setPageTitle(type.toUpperCase() === 'SPP' ? 'Daftar Tagihan SPP' : 'Daftar Tagihan Non-SPP');
+          // setPageTitle(type.toUpperCase() === 'SPP' ? 'Daftar Tagihan SPP' : 'Daftar Tagihan Non-SPP');
+          setPageTitle('Daftar Tagihan');
         } else {
           notifications.show({
             title: 'Gagal Mengambil Tagihan',
@@ -111,7 +114,16 @@ function PaymentListPage() {
   };
 
   const handleSelectPayment = (item) => { 
+    if(cartItems.length > 0) {
+      notifications.show({
+        title: 'Keranjang Sudah Ada',
+        message: 'Anda sudah memiliki item di keranjang. Silakan selesaikan pembayaran sebelumnya.',
+        color: 'yellow',
+      });
+      return;
+    }
     addToCart(item);
+    navigate('/cart');
   };
 
   if (loading) {
@@ -122,7 +134,6 @@ function PaymentListPage() {
       </Group>
     );
   }
-
   return (
     <div style={{ maxWidth: 900, margin: '0 auto', padding: '20px' }}>
       <Stack spacing="xl">
@@ -160,8 +171,7 @@ function PaymentListPage() {
           <Table striped highlightOnHover withTableBorder withColumnBorders>
             <thead>
               <tr>
-                <th>ID</th>
-                <th>Deskripsi Tagihan</th>
+                <th>Tagihan</th>
                 <th>Jumlah</th>
                 <th>Bulan/Tahun</th>
                 <th>Status</th>
@@ -171,16 +181,15 @@ function PaymentListPage() {
             <tbody>
               {filteredPayments.map((item) => (
                 <tr key={item.id}>
-                  <td>{item.id.substring(0, 8)}...</td>
-                  <td>{item.description}</td>
-                  <td>Rp {parseInt(item.amount).toLocaleString('id-ID')}</td>
-                  <td>{item.month}/{item.year}</td>
-                  <td>
+                  <td style={{ textAlign: 'center' }}>{item.debt.name} {moment(item.year + '-' + item.month + '-01').locale('id').format('MMMM YYYY')}</td>
+                  <td style={{ textAlign: 'center' }}>Rp {parseInt(item.amount).toLocaleString('id-ID')}</td>
+                  <td style={{ textAlign: 'center' }}>{item.month}/{item.year}</td>
+                  <td style={{ textAlign: 'center' }}>
                     <Text color={item.status === 'paid' ? 'green' : 'orange'} weight={500}>
                       {item.status}
                     </Text>
                   </td>
-                  <td>
+                  <td style={{ textAlign: 'center' }}>
                     <Button
                       size="sm"
                       onClick={() => handleSelectPayment(item)}
