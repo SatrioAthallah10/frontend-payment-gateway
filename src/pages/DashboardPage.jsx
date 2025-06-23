@@ -74,11 +74,15 @@ function DashboardPage() {
         </Text>
 
         <Group spacing="md" position="center" mt="lg">
-          <Button size="lg" onClick={handleSPPClick}>
+          {/* <Button size="lg" onClick={handleSPPClick}>
             Pembayaran SPP
           </Button>
           <Button size="lg" onClick={handleNonSPPClick}>
             Pembayaran Non-SPP
+          </Button> */}
+
+          <Button size="lg" onClick={handleSPPClick}>
+            Billings
           </Button>
         </Group>
 
