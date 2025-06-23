@@ -17,11 +17,39 @@ import {
 import { IconCircleCheck, IconCircleX, IconClock } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 
+import axios from 'axios';
+import { API_BASE_URL } from '../config/api';
+
+
 function ReportPage() {
+  const { apiToken } = usePayment();
+
   const { transactions, currentUser } = usePayment(); 
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false); 
 
+  const handlePayment = async (billingId) => {
+    setLoading(true);
+    try {
+      const response = await axios.post(`${API_BASE_URL}/v1/user/billings/check-status/${billingId}`, {}, {
+        headers: {
+          'Authorization': `Bearer ${apiToken}`,
+          'Accept': 'application/json',
+        },
+      });
+      navigate('/payments/spp');
+
+    } catch (error) {
+      console.error('Error fetching transaction status:', error);
+      notifications.show({
+        title: 'Error',
+        message: 'Tidak dapat memeriksa status transaksi. Silakan coba lagi nanti.',
+        color: 'red',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
   useEffect(() => {
     if (!currentUser) {
       notifications.show({
@@ -45,7 +73,6 @@ function ReportPage() {
       </Group>
     );
   }
-
   return (
     <div style={{ maxWidth: 1000, margin: '0 auto', padding: '20px' }}>
       <Stack spacing="xl">
@@ -97,9 +124,13 @@ function ReportPage() {
                   </td>
                   <td>
                     {trx.status === 'Initiated' || trx.status === 'Pending' ? (
-                      <Anchor href={trx.redirect_url} target="_blank" rel="noopener noreferrer">
-                        Lanjutkan Pembayaran
-                      </Anchor>
+                      <div>
+
+                        <Anchor href={trx.redirect_url} target="_blank" rel="noopener noreferrer">
+                          Lanjutkan Pembayaran
+                        </Anchor>
+                        <Button onClick={() => handlePayment(trx?.billing_id)}>Check Status</Button>
+                      </div>
                     ) : (
                       <Text c="dimmed">Selesai</Text>
                     )}
