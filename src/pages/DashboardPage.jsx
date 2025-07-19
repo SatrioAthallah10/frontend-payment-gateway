@@ -58,23 +58,30 @@ function DashboardPage() {
           Ini adalah Dashboard Anda. Silakan pilih opsi pembayaran atau manajemen di bawah.
         </Text>
 
-        <Group spacing="md" position="center" mt="lg">
-          <Button size="lg" onClick={() => navigate('/payments/spp')}>
-            Pembayaran SPP
-          </Button>
-          <Button size="lg" onClick={() => navigate('/payments/non-spp')}>
-            Pembayaran Non-SPP
-          </Button>
-        </Group>
+        {!isAdmin && (
+        <>
+          <Group spacing="md" position="center" mt="lg">
+            {/* <Button size="lg" onClick={() => navigate('/payments/spp')}>
+              Pembayaran SPP
+            </Button>
+            <Button size="lg" onClick={() => navigate('/payments/non-spp')}>
+              Pembayaran Non-SPP
+            </Button> */}
+            <Button size="lg" onClick={() => navigate('/payments/billings')}>
+              Daftar Tagihan
+            </Button>
+          </Group>
 
-        <Group spacing="md" position="center" mt="md">
-          <Button variant="outline" size="md" onClick={() => navigate('/cart')}>
-            Lihat Keranjang ({cartItems.length} item)
-          </Button>
-          <Button variant="outline" size="md" onClick={() => navigate('/reports')}>
-            Lihat Laporan
-          </Button>
-        </Group>
+          <Group spacing="md" position="center" mt="md">
+            <Button variant="outline" size="md" onClick={() => navigate('/cart')}>
+              Lihat Keranjang ({cartItems.length} item)
+            </Button>
+            <Button variant="outline" size="md" onClick={() => navigate('/reports')}>
+              Lihat Laporan
+            </Button>
+          </Group>
+        </>
+        )}
 
         {isAdmin && (
           <>

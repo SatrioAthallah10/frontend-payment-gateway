@@ -403,17 +403,17 @@ function BillingManagementPage() {
                 <tr key={billing.id}>
                   <td>{billing.id.substring(0, 8)}...</td>
                   <td>{billing.description}</td>
-                  <td>Rp {billing.amount.toLocaleString('id-ID')}</td>
+                  <td>Rp {(parseInt(billing.amount) || 0).toLocaleString('id-ID')}</td>
                   <td>{billing.month}/{billing.year}</td>
                   <td>{debts.find(d => d.value === billing.debt_id?.toString())?.label || 'Tidak Diketahui'}</td>
                   <td>{users.find(u => u.value === billing.user_id?.toString())?.label || 'Tidak Diketahui'}</td>
-                  <td>
+                  <td className="text-center">
                     <Badge color={billing.status === 'paid' ? 'green' : billing.status === 'unpaid' ? 'orange' : 'gray'}>
                       {billing.status || 'Tidak Diketahui'}
                     </Badge>
                   </td>
                   <td>
-                    <Group spacing="xs">
+                    <Group spacing="xs" justify="center">
                       <Button size="sm" variant="light" color="blue" onClick={() => handleEditClick(billing)} leftSection={<IconEdit size={14} />}>
                         Edit
                       </Button>
@@ -433,7 +433,7 @@ function BillingManagementPage() {
         <Stack spacing="md">
           <TextInput
             label="Deskripsi Tagihan"
-            placeholder="Contoh: SPP Semester Ganjil 2024"
+            placeholder="Contoh: BPP Agustus 2025"
             value={billingDescription}
             onChange={(event) => setBillingDescription(event.currentTarget.value)}
             required

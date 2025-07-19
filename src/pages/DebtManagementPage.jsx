@@ -279,10 +279,10 @@ function DebtManagementPage() {
             <tbody>
               {filteredDebts.map((debt) => (
                 <tr key={debt.id}>
-                  <td>{debt.name}</td>
+                  <td className="text-center">{debt.name}</td>
                   <td>{debt.description}</td>
-                  <td>
-                    <Group spacing="xs">
+                  <td className="text-center">
+                    <Group spacing="xs" justify="center">
                       <Button size="sm" variant="light" color="blue" onClick={() => handleEditClick(debt)} leftSection={<IconEdit size={14} />}>
                         Edit
                       </Button>
@@ -302,7 +302,7 @@ function DebtManagementPage() {
         <Stack spacing="md">
           <TextInput
             label="Nama Kategori"
-            placeholder="Contoh: SPP, Non-SPP"
+            placeholder="Contoh: BPP, Non-BPP"
             value={debtName}
             onChange={(event) => setDebtName(event.currentTarget.value)}
             required

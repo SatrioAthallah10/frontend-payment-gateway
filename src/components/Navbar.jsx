@@ -53,11 +53,14 @@ function Navbar() {
 
           {!isAdmin && (
             <>
-              <Button variant="subtle" leftSection={<IconCreditCard size={18} />} onClick={() => navigate('/payments/spp')}>
+              {/* <Button variant="subtle" leftSection={<IconCreditCard size={18} />} onClick={() => navigate('/payments/spp')}>
                 Pembayaran SPP
               </Button>
               <Button variant="subtle" leftSection={<IconCreditCard size={18} />} onClick={() => navigate('/payments/non-spp')}>
                 Pembayaran Non-SPP
+              </Button> */}
+              <Button variant="subtle" leftSection={<IconCreditCard size={18} />} onClick={() => navigate('/payments/billings')}>
+                Daftar Tagihan
               </Button>
               <Button variant="subtle" leftSection={<IconShoppingCart size={18} />} onClick={() => navigate('/cart')}>
                 Keranjang

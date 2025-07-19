@@ -12,7 +12,7 @@ import {
   Loader
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-
+import moment from 'moment';
 function CartPage() {
   const { cartItems, removeFromCart, checkout, currentUser, isAuthLoading } = usePayment();
   const navigate = useNavigate();
@@ -23,8 +23,7 @@ function CartPage() {
     }
   }, [currentUser, navigate, isAuthLoading]);
 
-  const totalAmount = cartItems.reduce((sum, item) => sum + (item.amount || 0), 0);
-
+  const totalAmount = cartItems.reduce((sum, item) => parseInt(sum) + (parseInt(item.amount) || 0), 0);
   const handleCheckout = async () => {
     if (cartItems.length === 0) {
       notifications.show({
@@ -88,9 +87,9 @@ function CartPage() {
               <tbody>
                 {cartItems.map((item) => (
                   <tr key={item.id}>
-                    <td>{item.description}</td>
-                    <td>Rp {(item.amount || 0).toLocaleString('id-ID')}</td> 
-                    <td>
+                    <td style={{ textAlign: 'center' }}>{item.description}</td>
+                    <td style={{ textAlign: 'center' }}>Rp {(parseInt(item.amount) || 0).toLocaleString('id-ID')}</td>
+                    <td style={{ textAlign: 'center' }}>
                       <Button
                         size="sm"
                         color="red"
